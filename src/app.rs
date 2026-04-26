@@ -1,5 +1,5 @@
 use crate::{Form, RadioSelector, Selection, Selector};
-use crossterm::event::{Event, read};
+use crossterm::event::{Event, KeyCode, KeyModifiers, read};
 use ratatui::{Terminal, backend::Backend};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -46,6 +46,71 @@ impl<T> App<T> {
 
     /// Handle the given input event.
     fn handle_event(&mut self, event: Event) {
+        let Some(ev) = event.as_key_press_event() else {
+            return;
+        };
+        if (ev.modifiers, ev.code) == (KeyModifiers::CONTROL, KeyCode::Char('c')) {
+            self.quitting = true;
+        } else if matches!(ev.modifiers, KeyModifiers::NONE | KeyModifiers::SHIFT) {
+            match ev.code {
+                KeyCode::Char('q' | 'Q') | KeyCode::Esc => self.quitting = true,
+                KeyCode::Char('h') | KeyCode::Left => self.move_left(),
+                KeyCode::Char('j') | KeyCode::Down => self.move_down(),
+                KeyCode::Char('k') | KeyCode::Up => self.move_up(),
+                KeyCode::Char('l') | KeyCode::Right => self.move_right(),
+                KeyCode::Char('w') | KeyCode::PageUp => self.page_up(),
+                KeyCode::Char('z') | KeyCode::PageDown => self.page_down(),
+                KeyCode::Char('g') | KeyCode::Home => self.goto_top(),
+                KeyCode::Char('G') | KeyCode::End => self.goto_bottom(),
+                KeyCode::Tab => self.next_block(),
+                KeyCode::BackTab => self.prev_block(),
+                KeyCode::Char(' ') | KeyCode::Enter => self.activate(),
+                _ => (),
+            }
+        }
+    }
+
+    fn move_left(&mut self) {
+        todo!()
+    }
+
+    fn move_down(&mut self) {
+        todo!()
+    }
+
+    fn move_up(&mut self) {
+        todo!()
+    }
+
+    fn move_right(&mut self) {
+        todo!()
+    }
+
+    fn page_up(&mut self) {
+        todo!()
+    }
+
+    fn page_down(&mut self) {
+        todo!()
+    }
+
+    fn goto_top(&mut self) {
+        todo!()
+    }
+
+    fn goto_bottom(&mut self) {
+        todo!()
+    }
+
+    fn next_block(&mut self) {
+        todo!()
+    }
+
+    fn prev_block(&mut self) {
+        todo!()
+    }
+
+    fn activate(&mut self) {
         todo!()
     }
 }
