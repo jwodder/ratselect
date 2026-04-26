@@ -1,3 +1,5 @@
+mod app;
+use crate::app::App;
 use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -16,8 +18,12 @@ impl<T> Form<T> {
         self.selectors.push((key, selector.into()));
     }
 
-    pub fn run(self) -> Option<Vec<(T, Selection)>> {
-        todo!()
+    pub fn run(self) -> std::io::Result<Option<Vec<(T, Selection)>>> {
+        let app = App::from(self);
+        let terminal = ratatui::try_init()?;
+        let r = app.run(terminal);
+        ratatui::restore();
+        r
     }
 }
 
