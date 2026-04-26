@@ -1,17 +1,18 @@
-use crate::{Form, RadioSelector, Selection, Selector};
+use crate::{Form, MultiSelector, RadioSelector, Selection, Selector};
 use crossterm::event::{Event, KeyCode, KeyModifiers, read};
 use ratatui::{Terminal, backend::Backend};
+use std::collections::BTreeSet;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct App<T> {
-    selections: Vec<(T, Selection)>,
-
+    keys: Vec<T>,
+    lists: Vec<ListData>,
     elements: Vec<Element>,
-
-    ok: bool,
-
+    focus: Focus,
     /// Should the application terminate?
     quitting: bool,
+    /// Did the user end the form by pressing "OK"?
+    ok: bool,
 }
 
 impl<T> App<T> {
@@ -27,7 +28,13 @@ impl<T> App<T> {
             self.draw(&mut terminal)?;
             self.process_input()?;
         }
-        Ok(self.ok.then_some(self.selections))
+        Ok(self.ok.then(|| {
+            std::iter::zip(
+                self.keys,
+                self.lists.into_iter().map(ListData::into_selection),
+            )
+            .collect()
+        }))
     }
 
     /// Draw the current screen on the terminal
@@ -70,20 +77,67 @@ impl<T> App<T> {
         }
     }
 
+    fn is_empty(&self) -> bool {
+        self.keys.is_empty()
+    }
+
     fn move_left(&mut self) {
-        todo!()
+        if self.focus == Focus::CancelButton {
+            self.focus = Focus::OkButton;
+        }
     }
 
     fn move_down(&mut self) {
-        todo!()
+        if let Focus::Item {
+            mut list,
+            mut option,
+        } = self.focus
+        {
+            option += 1;
+            if option < self.lists[list].len() {
+                self.focus = Focus::Item { list, option };
+            } else {
+                list += 1;
+                if list < self.lists.len() {
+                    self.focus = Focus::Item { list, option: 0 };
+                } else {
+                    self.focus = Focus::OkButton;
+                }
+            }
+        }
+        // TODO: Scroll
     }
 
     fn move_up(&mut self) {
-        todo!()
+        match self.focus {
+            Focus::Item { list, option } => {
+                if let Some(option) = option.checked_sub(1) {
+                    self.focus = Focus::Item { list, option };
+                } else if let Some(list) = list.checked_sub(1) {
+                    self.focus = Focus::Item {
+                        list,
+                        option: self.lists[list].len() - 1,
+                    };
+                }
+                // Else: We're at the top
+            }
+            Focus::OkButton | Focus::CancelButton => {
+                if let Some(list) = self.lists.len().checked_sub(1) {
+                    self.focus = Focus::Item {
+                        list,
+                        option: self.lists[list].len() - 1,
+                    };
+                }
+                // Else: content is empty; can't move up
+            }
+        }
+        // TODO: Scroll
     }
 
     fn move_right(&mut self) {
-        todo!()
+        if self.focus == Focus::OkButton {
+            self.focus = Focus::CancelButton;
+        }
     }
 
     fn page_up(&mut self) {
@@ -95,63 +149,140 @@ impl<T> App<T> {
     }
 
     fn goto_top(&mut self) {
-        todo!()
+        if self.is_empty() {
+            self.focus = Focus::OkButton;
+        } else {
+            self.focus = Focus::Item { list: 0, option: 0 };
+            // TODO: Scroll
+        }
     }
 
     fn goto_bottom(&mut self) {
-        todo!()
+        self.focus = Focus::CancelButton;
+        // TODO: Scroll
     }
 
     fn next_block(&mut self) {
-        todo!()
+        match self.focus {
+            Focus::Item { mut list, .. } => {
+                list += 1;
+                if list < self.lists.len() {
+                    self.focus = Focus::Item { list, option: 0 };
+                } else {
+                    self.focus = Focus::OkButton;
+                }
+            }
+            Focus::OkButton => self.focus = Focus::CancelButton,
+            Focus::CancelButton => {
+                if self.is_empty() {
+                    self.focus = Focus::OkButton;
+                } else {
+                    self.focus = Focus::Item { list: 0, option: 0 };
+                }
+            }
+        }
+        // TODO: Scroll
     }
 
     fn prev_block(&mut self) {
-        todo!()
+        match self.focus {
+            Focus::Item { list, .. } => {
+                if let Some(list) = list.checked_sub(1) {
+                    self.focus = Focus::Item { list, option: 0 };
+                } else {
+                    self.focus = Focus::CancelButton;
+                }
+            }
+            Focus::OkButton => {
+                if let Some(list) = self.lists.len().checked_sub(1) {
+                    self.focus = Focus::Item { list, option: 0 };
+                } else {
+                    self.focus = Focus::CancelButton;
+                }
+            }
+            Focus::CancelButton => self.focus = Focus::OkButton,
+        }
+        // TODO: Scroll
     }
 
     fn activate(&mut self) {
-        todo!()
+        match self.focus {
+            Focus::Item { list, option } => self.lists[list].activate_option(option),
+            Focus::OkButton => {
+                self.ok = true;
+                self.quitting = true;
+            }
+            Focus::CancelButton => self.quitting = true,
+        }
     }
 }
 
 impl<T> From<Form<T>> for App<T> {
     fn from(form: Form<T>) -> App<T> {
-        let mut selections = Vec::with_capacity(form.selectors.len());
-        let mut elements = Vec::with_capacity(form.selectors.len().saturating_mul(3));
-        for (key, s) in form.selectors {
-            if !s.is_empty() {
-                let i = selections.len();
-                selections.push((key, s.default_selection()));
-                if !elements.is_empty() {
-                    elements.push(Element::BlankLine);
-                }
-                elements.push(Element::Text(s.title().to_owned()));
-                match s {
-                    Selector::Radio(RadioSelector {
-                        options, default, ..
-                    }) => {
-                        elements.push(Element::RadioGroup {
-                            list_index: i,
-                            options,
-                            checked: default,
+        let capacity = form.selectors.len();
+        let mut keys = Vec::with_capacity(capacity);
+        let mut lists = Vec::with_capacity(capacity);
+        let mut elements = Vec::with_capacity(capacity.saturating_mul(3));
+        for (i, (key, s)) in form
+            .selectors
+            .into_iter()
+            .filter(|(_, s)| !s.is_empty())
+            .enumerate()
+        {
+            keys.push(key);
+            match s {
+                Selector::Radio(RadioSelector {
+                    title,
+                    options,
+                    default,
+                }) => {
+                    lists.push(ListData::Radio(RadioData {
+                        len: options.len(),
+                        checked: default,
+                    }));
+                    elements.push(Element::Text(title));
+                    for (j, opt) in options.into_iter().enumerate() {
+                        elements.push(Element::RadioButton {
+                            list: i,
+                            option: j,
+                            text: opt,
                         });
                     }
-                    Selector::Multi(ms) => {
-                        elements.push(Element::MultiGroup {
-                            list_index: i,
-                            options: ms.into_checked_options().collect(),
+                }
+                Selector::Multi(MultiSelector {
+                    title,
+                    options,
+                    defaults,
+                }) => {
+                    lists.push(ListData::Multi(MultiData {
+                        len: options.len(),
+                        checked: defaults,
+                    }));
+                    elements.push(Element::Text(title));
+                    for (j, opt) in options.into_iter().enumerate() {
+                        elements.push(Element::Checkbox {
+                            list: i,
+                            option: j,
+                            text: opt,
                         });
                     }
                 }
             }
+            elements.push(Element::BlankLine);
         }
+        let focus = if keys.is_empty() {
+            Focus::OkButton
+        } else {
+            Focus::Item { list: 0, option: 0 }
+        };
         elements.push(Element::Buttons);
         App {
-            selections,
+            keys,
+            lists,
             elements,
-            ok: false,
+            focus,
             quitting: false,
+            ok: false,
         }
     }
 }
@@ -159,15 +290,88 @@ impl<T> From<Form<T>> for App<T> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Element {
     Text(String),
-    RadioGroup {
-        list_index: usize,
-        options: Vec<String>,
-        checked: usize,
+    RadioButton {
+        list: usize,
+        option: usize,
+        text: String,
     },
-    MultiGroup {
-        list_index: usize,
-        options: Vec<(bool, String)>,
+    Checkbox {
+        list: usize,
+        option: usize,
+        text: String,
     },
     BlankLine,
     Buttons,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Focus {
+    Item { list: usize, option: usize },
+    OkButton,
+    CancelButton,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum ListData {
+    Radio(RadioData),
+    Multi(MultiData),
+}
+
+impl ListData {
+    fn len(&self) -> usize {
+        match self {
+            ListData::Radio(d) => d.len,
+            ListData::Multi(d) => d.len,
+        }
+    }
+
+    fn activate_option(&mut self, option: usize) {
+        match self {
+            ListData::Radio(d) => d.activate_option(option),
+            ListData::Multi(d) => d.activate_option(option),
+        }
+    }
+
+    fn into_selection(self) -> Selection {
+        match self {
+            ListData::Radio(d) => d.into_selection(),
+            ListData::Multi(d) => d.into_selection(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct RadioData {
+    len: usize,
+    checked: usize,
+}
+
+impl RadioData {
+    fn activate_option(&mut self, option: usize) {
+        self.checked = option;
+    }
+
+    fn into_selection(self) -> Selection {
+        Selection::Radio(self.checked)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct MultiData {
+    len: usize,
+    checked: BTreeSet<usize>,
+}
+
+impl MultiData {
+    fn activate_option(&mut self, option: usize) {
+        if self.checked.contains(&option) {
+            self.checked.remove(&option);
+        } else {
+            self.checked.insert(option);
+        }
+    }
+
+    fn into_selection(self) -> Selection {
+        Selection::Multi(self.checked)
+    }
 }
