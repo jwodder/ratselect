@@ -42,17 +42,13 @@ impl<T> App<T> {
     where
         std::io::Error: From<B::Error>,
     {
-        while !self.quitting {
+        loop {
+            if let Some(output) = self.get_output() {
+                return Ok(output);
+            }
             self.draw(&mut terminal)?;
             self.process_input()?;
         }
-        Ok(self.ok.then(|| {
-            std::iter::zip(
-                self.keys,
-                self.lists.into_iter().map(ListData::into_selection),
-            )
-            .collect()
-        }))
     }
 
     /// Draw the current screen on the terminal
@@ -68,6 +64,25 @@ impl<T> App<T> {
     fn process_input(&mut self) -> std::io::Result<()> {
         self.handle_event(read()?);
         Ok(())
+    }
+
+    /// If the user has either completed or cancelled the application, return
+    /// `Some(output)`, where `output` is the value to return from `run()`.
+    ///
+    /// Once this method returns `Some`, no further methods of `App` should be
+    /// called.
+    fn get_output(&mut self) -> Option<Option<Vec<(T, Selection)>>> {
+        match (self.quitting, self.ok) {
+            (true, true) => Some(Some(
+                std::iter::zip(
+                    self.keys.drain(..),
+                    self.lists.drain(..).map(ListData::into_selection),
+                )
+                .collect(),
+            )),
+            (true, false) => Some(None),
+            (false, _) => None,
+        }
     }
 
     /// Handle the given input event.
