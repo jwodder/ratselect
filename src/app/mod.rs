@@ -3,9 +3,11 @@ use crossterm::event::{Event, KeyCode, KeyModifiers, read};
 use ratatui::{
     Terminal,
     backend::Backend,
-    layout::{Constraint, Layout},
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
     style::Style,
     text::Line,
+    widgets::Widget,
 };
 use std::collections::BTreeSet;
 
@@ -58,78 +60,7 @@ impl<T> App<T> {
     where
         std::io::Error: From<B::Error>,
     {
-        terminal.draw(|frame| {
-            for (row, elem) in std::iter::zip(frame.area().rows(), &self.elements) {
-                match elem {
-                    Element::Text(txt) => {
-                        frame.render_widget(Line::styled(&**txt, TITLE_STYLE), row);
-                    }
-                    Element::RadioButton { list, option, text } => {
-                        let mark = if self.lists[*list].is_checked(*option) {
-                            CHECKMARK
-                        } else {
-                            ' '
-                        };
-                        let mut line = Line::from(format!(
-                            "{sp:width$}({mark}) {text}",
-                            sp = "",
-                            width = OPTION_INDENT
-                        ));
-                        if self.focus
-                            == (Focus::Item {
-                                list: *list,
-                                option: *option,
-                            })
-                        {
-                            line = line.style(HIGHLIGHT_STYLE);
-                        }
-                        frame.render_widget(line, row);
-                    }
-                    Element::Checkbox { list, option, text } => {
-                        let mark = if self.lists[*list].is_checked(*option) {
-                            CHECKMARK
-                        } else {
-                            ' '
-                        };
-                        let mut line = Line::from(format!(
-                            "{sp:width$}[{mark}] {text}",
-                            sp = "",
-                            width = OPTION_INDENT
-                        ));
-                        if self.focus
-                            == (Focus::Item {
-                                list: *list,
-                                option: *option,
-                            })
-                        {
-                            line = line.style(HIGHLIGHT_STYLE);
-                        }
-                        frame.render_widget(line, row);
-                    }
-                    Element::BlankLine => (),
-                    Element::Buttons => {
-                        let mut ok_button = Line::from("<OK>").centered();
-                        if self.focus == Focus::OkButton {
-                            ok_button = ok_button.style(HIGHLIGHT_STYLE);
-                        }
-                        let mut cancel_button = Line::from("<Cancel>").centered();
-                        if self.focus == Focus::CancelButton {
-                            cancel_button = cancel_button.style(HIGHLIGHT_STYLE);
-                        }
-                        let [_, ok_area, _, cancel_area, _] = Layout::horizontal([
-                            Constraint::Fill(2),
-                            Constraint::Length(BUTTON_BOX_WIDTH),
-                            Constraint::Fill(1),
-                            Constraint::Length(BUTTON_BOX_WIDTH),
-                            Constraint::Fill(2),
-                        ])
-                        .areas(row);
-                        frame.render_widget(ok_button, ok_area);
-                        frame.render_widget(cancel_button, cancel_area);
-                    }
-                }
-            }
-        })?;
+        terminal.draw(|frame| frame.render_widget(self, frame.area()))?;
         Ok(())
     }
 
@@ -307,6 +238,81 @@ impl<T> App<T> {
     }
 }
 
+impl<T> Widget for &App<T> {
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        for (row, elem) in std::iter::zip(area.rows(), &self.elements) {
+            match elem {
+                Element::Text(txt) => {
+                    Line::styled(&**txt, TITLE_STYLE).render(row, buf);
+                }
+                Element::RadioButton { list, option, text } => {
+                    let mark = if self.lists[*list].is_checked(*option) {
+                        CHECKMARK
+                    } else {
+                        ' '
+                    };
+                    let mut line = Line::from(format!(
+                        "{sp:width$}({mark}) {text}",
+                        sp = "",
+                        width = OPTION_INDENT
+                    ));
+                    if self.focus
+                        == (Focus::Item {
+                            list: *list,
+                            option: *option,
+                        })
+                    {
+                        line = line.style(HIGHLIGHT_STYLE);
+                    }
+                    line.render(row, buf);
+                }
+                Element::Checkbox { list, option, text } => {
+                    let mark = if self.lists[*list].is_checked(*option) {
+                        CHECKMARK
+                    } else {
+                        ' '
+                    };
+                    let mut line = Line::from(format!(
+                        "{sp:width$}[{mark}] {text}",
+                        sp = "",
+                        width = OPTION_INDENT
+                    ));
+                    if self.focus
+                        == (Focus::Item {
+                            list: *list,
+                            option: *option,
+                        })
+                    {
+                        line = line.style(HIGHLIGHT_STYLE);
+                    }
+                    line.render(row, buf);
+                }
+                Element::BlankLine => (),
+                Element::Buttons => {
+                    let mut ok_button = Line::from("<OK>").centered();
+                    if self.focus == Focus::OkButton {
+                        ok_button = ok_button.style(HIGHLIGHT_STYLE);
+                    }
+                    let mut cancel_button = Line::from("<Cancel>").centered();
+                    if self.focus == Focus::CancelButton {
+                        cancel_button = cancel_button.style(HIGHLIGHT_STYLE);
+                    }
+                    let [_, ok_area, _, cancel_area, _] = Layout::horizontal([
+                        Constraint::Fill(2),
+                        Constraint::Length(BUTTON_BOX_WIDTH),
+                        Constraint::Fill(1),
+                        Constraint::Length(BUTTON_BOX_WIDTH),
+                        Constraint::Fill(2),
+                    ])
+                    .areas(row);
+                    ok_button.render(ok_area, buf);
+                    cancel_button.render(cancel_area, buf);
+                }
+            }
+        }
+    }
+}
+
 impl<T> From<Form<T>> for App<T> {
     fn from(form: Form<T>) -> App<T> {
         let capacity = form.selectors.len();
@@ -480,3 +486,6 @@ impl MultiData {
         Selection::Multi(self.checked)
     }
 }
+
+#[cfg(test)]
+mod tests;
