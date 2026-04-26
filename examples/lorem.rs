@@ -20,11 +20,11 @@ const IPSUM: [&str; 7] = [
     "nobis videntur parum clari, fiant sollemnes in futurum.",
 ];
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let mut app = Form::new();
     app.add("lorem", RadioSelector::new("Lorem", LOREM));
     app.add("ipsum", MultiSelector::new("Ipsum", IPSUM));
-    let selections = app.run();
+    let selections = app.run()?;
     if std::env::args_os().nth(1).is_some_and(|s| s == "--debug") {
         println!("{selections:#?}");
     } else if let Some(selections) = selections {
@@ -53,4 +53,5 @@ fn main() {
     } else {
         println!("User quit");
     }
+    Ok(())
 }

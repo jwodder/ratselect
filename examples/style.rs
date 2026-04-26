@@ -16,7 +16,7 @@ const COLORS: [&str; 8] = [
     "Black", "Red", "Green", "Yellow", "Blue", "Magneta", "Cyan", "White",
 ];
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let mut app = Form::new();
     app.add(
         "effects",
@@ -26,7 +26,7 @@ fn main() {
         "color",
         RadioSelector::new("Color:", COLORS).with_default(4),
     );
-    let selections = app.run();
+    let selections = app.run()?;
     if std::env::args_os().nth(1).is_some_and(|s| s == "--debug") {
         println!("{selections:#?}");
     } else if let Some(selections) = selections {
@@ -55,4 +55,5 @@ fn main() {
     } else {
         println!("User quit");
     }
+    Ok(())
 }

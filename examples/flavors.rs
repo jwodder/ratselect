@@ -12,11 +12,11 @@ const FLAVORS: [&str; 7] = [
 
 const TOPPINGS: [&str; 5] = ["Whipped Cream", "Hot Fudge", "Nuts", "Cherry", "Banana"];
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let mut app = Form::new();
     app.add("flavor", RadioSelector::new("Flavors:", FLAVORS));
     app.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
-    let selections = app.run();
+    let selections = app.run()?;
     if std::env::args_os().nth(1).is_some_and(|s| s == "--debug") {
         println!("{selections:#?}");
     } else if let Some(selections) = selections {
@@ -45,4 +45,5 @@ fn main() {
     } else {
         println!("User quit");
     }
+    Ok(())
 }

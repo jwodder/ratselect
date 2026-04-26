@@ -1,7 +1,18 @@
 use crate::{Form, MultiSelector, RadioSelector, Selection, Selector};
 use crossterm::event::{Event, KeyCode, KeyModifiers, read};
-use ratatui::{Terminal, backend::Backend};
+use ratatui::{
+    Terminal,
+    backend::Backend,
+    layout::{Constraint, Layout},
+    style::Style,
+    text::Line,
+};
 use std::collections::BTreeSet;
+
+const OPTION_INDENT: usize = 4;
+const HIGHLIGHT_STYLE: Style = Style::new().reversed();
+const CHECKMARK: char = 'X';
+const BUTTON_BOX_WIDTH: u16 = 8;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct App<T> {
@@ -42,7 +53,77 @@ impl<T> App<T> {
     where
         std::io::Error: From<B::Error>,
     {
-        todo!()
+        terminal.draw(|frame| {
+            for (row, elem) in std::iter::zip(frame.area().rows(), &self.elements) {
+                match elem {
+                    Element::Text(txt) => frame.render_widget(Line::from(&**txt), row),
+                    Element::RadioButton { list, option, text } => {
+                        let mark = if self.lists[*list].is_checked(*option) {
+                            CHECKMARK
+                        } else {
+                            ' '
+                        };
+                        let mut line = Line::from(format!(
+                            "{sp:width$}({mark}) {text}",
+                            sp = "",
+                            width = OPTION_INDENT
+                        ));
+                        if self.focus
+                            == (Focus::Item {
+                                list: *list,
+                                option: *option,
+                            })
+                        {
+                            line = line.style(HIGHLIGHT_STYLE);
+                        }
+                        frame.render_widget(line, row);
+                    }
+                    Element::Checkbox { list, option, text } => {
+                        let mark = if self.lists[*list].is_checked(*option) {
+                            CHECKMARK
+                        } else {
+                            ' '
+                        };
+                        let mut line = Line::from(format!(
+                            "{sp:width$}[{mark}] {text}",
+                            sp = "",
+                            width = OPTION_INDENT
+                        ));
+                        if self.focus
+                            == (Focus::Item {
+                                list: *list,
+                                option: *option,
+                            })
+                        {
+                            line = line.style(HIGHLIGHT_STYLE);
+                        }
+                        frame.render_widget(line, row);
+                    }
+                    Element::BlankLine => (),
+                    Element::Buttons => {
+                        let mut ok_button = Line::from("<OK>").centered();
+                        if self.focus == Focus::OkButton {
+                            ok_button = ok_button.style(HIGHLIGHT_STYLE);
+                        }
+                        let mut cancel_button = Line::from("<Cancel>").centered();
+                        if self.focus == Focus::CancelButton {
+                            cancel_button = cancel_button.style(HIGHLIGHT_STYLE);
+                        }
+                        let [_, ok_area, _, cancel_area, _] = Layout::horizontal([
+                            Constraint::Fill(2),
+                            Constraint::Length(BUTTON_BOX_WIDTH),
+                            Constraint::Fill(1),
+                            Constraint::Length(BUTTON_BOX_WIDTH),
+                            Constraint::Fill(2),
+                        ])
+                        .areas(row);
+                        frame.render_widget(ok_button, ok_area);
+                        frame.render_widget(cancel_button, cancel_area);
+                    }
+                }
+            }
+        })?;
+        Ok(())
     }
 
     /// Receive & handle the next input event or lack thereof
@@ -65,8 +146,8 @@ impl<T> App<T> {
                 KeyCode::Char('j') | KeyCode::Down => self.move_down(),
                 KeyCode::Char('k') | KeyCode::Up => self.move_up(),
                 KeyCode::Char('l') | KeyCode::Right => self.move_right(),
-                KeyCode::Char('w') | KeyCode::PageUp => self.page_up(),
-                KeyCode::Char('z') | KeyCode::PageDown => self.page_down(),
+                //TODO: KeyCode::Char('w') | KeyCode::PageUp => self.page_up(),
+                //TODO: KeyCode::Char('z') | KeyCode::PageDown => self.page_down(),
                 KeyCode::Char('g') | KeyCode::Home => self.goto_top(),
                 KeyCode::Char('G') | KeyCode::End => self.goto_bottom(),
                 KeyCode::Tab => self.next_block(),
@@ -140,6 +221,7 @@ impl<T> App<T> {
         }
     }
 
+    /*
     fn page_up(&mut self) {
         todo!()
     }
@@ -147,6 +229,7 @@ impl<T> App<T> {
     fn page_down(&mut self) {
         todo!()
     }
+    */
 
     fn goto_top(&mut self) {
         if self.is_empty() {
@@ -332,6 +415,13 @@ impl ListData {
         }
     }
 
+    fn is_checked(&self, option: usize) -> bool {
+        match self {
+            ListData::Radio(d) => d.is_checked(option),
+            ListData::Multi(d) => d.is_checked(option),
+        }
+    }
+
     fn into_selection(self) -> Selection {
         match self {
             ListData::Radio(d) => d.into_selection(),
@@ -349,6 +439,10 @@ struct RadioData {
 impl RadioData {
     fn activate_option(&mut self, option: usize) {
         self.checked = option;
+    }
+
+    fn is_checked(&self, option: usize) -> bool {
+        self.checked == option
     }
 
     fn into_selection(self) -> Selection {
@@ -369,6 +463,10 @@ impl MultiData {
         } else {
             self.checked.insert(option);
         }
+    }
+
+    fn is_checked(&self, option: usize) -> bool {
+        self.checked.contains(&option)
     }
 
     fn into_selection(self) -> Selection {
