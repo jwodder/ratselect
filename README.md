@@ -3,6 +3,7 @@
 [![codecov.io](https://codecov.io/gh/jwodder/ratselect/branch/main/graph/badge.svg)](https://codecov.io/gh/jwodder/ratselect)
 [![Minimum Supported Rust Version](https://img.shields.io/badge/MSRV-1.88-orange)](https://www.rust-lang.org)
 [![MIT License](https://img.shields.io/github/license/jwodder/ratselect.svg)](https://opensource.org/licenses/MIT)
+[![Built With Ratatui](https://ratatui.rs/built-with-ratatui/badge.svg)](https://ratatui.rs/)
 
 [GitHub](https://github.com/jwodder/ratselect) | [Issues](https://github.com/jwodder/ratselect/issues)
 
