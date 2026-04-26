@@ -158,10 +158,233 @@ fn cancel_flavors() {
     assert_eq!(app.get_output(), Some(None));
 }
 
+#[test]
+fn double_click_radio() {
+    let mut form = Form::new();
+    form.add("flavor", RadioSelector::new("Flavors:", FLAVORS));
+    form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
+    let mut app = App::from(form);
+    assert!(app.get_output().is_none());
+    let area = Rect::new(0, 0, 80, 24);
+
+    app.handle_event(Event::Key(KeyCode::Down.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(area);
+    app.render(area, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "Flavors:                                                                        ",
+        "    (X) Vanilla                                                                 ",
+        "    ( ) Chocolate                                                               ",
+        "    ( ) Strawberry                                                              ",
+        "    ( ) Cinnamon                                                                ",
+        "    ( ) Butterscotch                                                            ",
+        "    ( ) Peanut Butter Fudge                                                     ",
+        "    ( ) Chili                                                                   ",
+        "                                                                                ",
+        "Toppings:                                                                       ",
+        "    [ ] Whipped Cream                                                           ",
+        "    [ ] Hot Fudge                                                               ",
+        "    [ ] Nuts                                                                    ",
+        "    [ ] Cherry                                                                  ",
+        "    [ ] Banana                                                                  ",
+        "                                                                                ",
+        "                            <OK>              <Cancel>                          ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+    ]);
+    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
+    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
+    expected.set_style(Rect::new(0, 2, 80, 1), HIGHLIGHT_STYLE); // "Chocolate" line
+    pretty_assertions::assert_eq!(buffer, expected);
+
+    app.handle_event(Event::Key(KeyCode::Enter.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(area);
+    app.render(area, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "Flavors:                                                                        ",
+        "    ( ) Vanilla                                                                 ",
+        "    (X) Chocolate                                                               ",
+        "    ( ) Strawberry                                                              ",
+        "    ( ) Cinnamon                                                                ",
+        "    ( ) Butterscotch                                                            ",
+        "    ( ) Peanut Butter Fudge                                                     ",
+        "    ( ) Chili                                                                   ",
+        "                                                                                ",
+        "Toppings:                                                                       ",
+        "    [ ] Whipped Cream                                                           ",
+        "    [ ] Hot Fudge                                                               ",
+        "    [ ] Nuts                                                                    ",
+        "    [ ] Cherry                                                                  ",
+        "    [ ] Banana                                                                  ",
+        "                                                                                ",
+        "                            <OK>              <Cancel>                          ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+    ]);
+    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
+    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
+    expected.set_style(Rect::new(0, 2, 80, 1), HIGHLIGHT_STYLE); // "Chocolate" line
+    pretty_assertions::assert_eq!(buffer, expected);
+
+    app.handle_event(Event::Key(KeyCode::Enter.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(area);
+    app.render(area, &mut buffer);
+    pretty_assertions::assert_eq!(buffer, expected);
+
+    app.handle_event(Event::Key(KeyCode::Tab.into()));
+    assert!(app.get_output().is_none());
+    app.handle_event(Event::Key(KeyCode::Tab.into()));
+    assert!(app.get_output().is_none());
+    app.handle_event(Event::Key(KeyCode::Enter.into()));
+    assert_eq!(
+        app.get_output(),
+        Some(Some(vec![
+            ("flavor", Selection::Radio(1)),
+            ("toppings", Selection::Multi(BTreeSet::new())),
+        ]))
+    );
+}
+
+#[test]
+fn double_click_checkbox() {
+    let mut form = Form::new();
+    form.add("flavor", RadioSelector::new("Flavors:", FLAVORS));
+    form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
+    let mut app = App::from(form);
+    assert!(app.get_output().is_none());
+    let area = Rect::new(0, 0, 80, 24);
+
+    app.handle_event(Event::Key(KeyCode::Tab.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(area);
+    app.render(area, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "Flavors:                                                                        ",
+        "    (X) Vanilla                                                                 ",
+        "    ( ) Chocolate                                                               ",
+        "    ( ) Strawberry                                                              ",
+        "    ( ) Cinnamon                                                                ",
+        "    ( ) Butterscotch                                                            ",
+        "    ( ) Peanut Butter Fudge                                                     ",
+        "    ( ) Chili                                                                   ",
+        "                                                                                ",
+        "Toppings:                                                                       ",
+        "    [ ] Whipped Cream                                                           ",
+        "    [ ] Hot Fudge                                                               ",
+        "    [ ] Nuts                                                                    ",
+        "    [ ] Cherry                                                                  ",
+        "    [ ] Banana                                                                  ",
+        "                                                                                ",
+        "                            <OK>              <Cancel>                          ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+    ]);
+    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
+    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
+    expected.set_style(Rect::new(0, 10, 80, 1), HIGHLIGHT_STYLE); // "Whipped Cream" line
+    pretty_assertions::assert_eq!(buffer, expected);
+
+    app.handle_event(Event::Key(KeyCode::Enter.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(area);
+    app.render(area, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "Flavors:                                                                        ",
+        "    (X) Vanilla                                                                 ",
+        "    ( ) Chocolate                                                               ",
+        "    ( ) Strawberry                                                              ",
+        "    ( ) Cinnamon                                                                ",
+        "    ( ) Butterscotch                                                            ",
+        "    ( ) Peanut Butter Fudge                                                     ",
+        "    ( ) Chili                                                                   ",
+        "                                                                                ",
+        "Toppings:                                                                       ",
+        "    [X] Whipped Cream                                                           ",
+        "    [ ] Hot Fudge                                                               ",
+        "    [ ] Nuts                                                                    ",
+        "    [ ] Cherry                                                                  ",
+        "    [ ] Banana                                                                  ",
+        "                                                                                ",
+        "                            <OK>              <Cancel>                          ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+    ]);
+    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
+    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
+    expected.set_style(Rect::new(0, 10, 80, 1), HIGHLIGHT_STYLE); // "Whipped Cream" line
+    pretty_assertions::assert_eq!(buffer, expected);
+
+    app.handle_event(Event::Key(KeyCode::Enter.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(area);
+    app.render(area, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "Flavors:                                                                        ",
+        "    (X) Vanilla                                                                 ",
+        "    ( ) Chocolate                                                               ",
+        "    ( ) Strawberry                                                              ",
+        "    ( ) Cinnamon                                                                ",
+        "    ( ) Butterscotch                                                            ",
+        "    ( ) Peanut Butter Fudge                                                     ",
+        "    ( ) Chili                                                                   ",
+        "                                                                                ",
+        "Toppings:                                                                       ",
+        "    [ ] Whipped Cream                                                           ",
+        "    [ ] Hot Fudge                                                               ",
+        "    [ ] Nuts                                                                    ",
+        "    [ ] Cherry                                                                  ",
+        "    [ ] Banana                                                                  ",
+        "                                                                                ",
+        "                            <OK>              <Cancel>                          ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+        "                                                                                ",
+    ]);
+    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
+    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
+    expected.set_style(Rect::new(0, 10, 80, 1), HIGHLIGHT_STYLE); // "Whipped Cream" line
+    pretty_assertions::assert_eq!(buffer, expected);
+
+    app.handle_event(Event::Key(KeyCode::Tab.into()));
+    assert!(app.get_output().is_none());
+    app.handle_event(Event::Key(KeyCode::Enter.into()));
+    assert_eq!(
+        app.get_output(),
+        Some(Some(vec![
+            ("flavor", Selection::Radio(0)),
+            ("toppings", Selection::Multi(BTreeSet::new())),
+        ]))
+    );
+}
+
 // move around in "flavors" and toggle boxes
 // hit "OK" after changing something
 // hit "Cancel" after changing something
-// activate a radio button, then activate it again
 // activate a radio button, then activate another one
-// activate a checkbox, then activate it again
 // activate a checkbox, then activate another one

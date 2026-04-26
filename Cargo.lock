@@ -998,7 +998,7 @@ dependencies = [
 
 [[package]]
 name = "ratselect"
-version = "0.1.0-dev"
+version = "0.0.0"
 dependencies = [
  "crossterm",
  "pretty_assertions",
