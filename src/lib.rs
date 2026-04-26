@@ -106,13 +106,6 @@ impl RadioSelector {
         Selection::Radio(self.default)
     }
 
-    fn into_checked_options(self) -> impl Iterator<Item = (bool, String)> {
-        self.options
-            .into_iter()
-            .enumerate()
-            .map(move |(i, s)| (i == self.default, s))
-    }
-
     fn is_empty(&self) -> bool {
         self.options.is_empty()
     }
