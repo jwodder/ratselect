@@ -10,8 +10,13 @@ use ratatui::{
 use std::collections::BTreeSet;
 
 const OPTION_INDENT: usize = 4;
+
 const HIGHLIGHT_STYLE: Style = Style::new().reversed();
+
+const TITLE_STYLE: Style = Style::new().bold();
+
 const CHECKMARK: char = 'X';
+
 const BUTTON_BOX_WIDTH: u16 = 8;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -56,7 +61,9 @@ impl<T> App<T> {
         terminal.draw(|frame| {
             for (row, elem) in std::iter::zip(frame.area().rows(), &self.elements) {
                 match elem {
-                    Element::Text(txt) => frame.render_widget(Line::from(&**txt), row),
+                    Element::Text(txt) => {
+                        frame.render_widget(Line::styled(&**txt, TITLE_STYLE), row);
+                    }
                     Element::RadioButton { list, option, text } => {
                         let mark = if self.lists[*list].is_checked(*option) {
                             CHECKMARK
