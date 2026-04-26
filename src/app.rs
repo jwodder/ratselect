@@ -35,7 +35,7 @@ impl<T> App<T> {
     where
         std::io::Error: From<B::Error>,
     {
-        while self.quitting {
+        while !self.quitting {
             self.draw(&mut terminal)?;
             self.process_input()?;
         }
