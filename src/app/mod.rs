@@ -194,7 +194,7 @@ impl<T> App<T> {
     }
 
     fn goto_bottom(&mut self) {
-        self.focus = Focus::CancelButton;
+        self.focus = Focus::OkButton;
         // TODO: Scroll
     }
 
