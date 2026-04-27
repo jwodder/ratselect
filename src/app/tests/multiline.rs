@@ -34,7 +34,7 @@ mod areas {
 
     pub(super) const SCREEN: Rect = Rect::new(0, 0, 80, 24);
 
-    pub(super) const VERSE1: Rect = Rect::new(0, 0, 80, 4);
+    pub(super) const VERSE1: Rect = Rect::new(0, 0, 79, 4);
     pub(super) const VERSE2: Rect = Rect::new(4, 4, 49, 4);
 }
 
@@ -45,7 +45,7 @@ fn draw_multiline() {
         "jabberwocky",
         RadioSelector::new(VERSE1, [VERSE2, VERSE3, VERSE4]),
     );
-    let app = App::from(form);
+    let mut app = App::from(form);
     let mut buffer = Buffer::empty(areas::SCREEN);
     app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
@@ -66,7 +66,7 @@ fn draw_multiline() {
         "        Came whiffling through the tulgey wood,                                 ",
         "            And burbled as it came!                                             ",
         "                                                                                ",
-        "                            <OK>              <Cancel>                          ",
+        "                           <OK>               <Cancel>                          ",
         "                                                                                ",
         "                                                                                ",
         "                                                                                ",
