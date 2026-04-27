@@ -2,22 +2,24 @@ use super::{HIGHLIGHT_STYLE, TITLE_STYLE};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    text::{Line, Span},
+    text::{Line, Span, Text},
     widgets::Widget,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct ListTitle<'a>(pub(super) &'a str);
+pub(super) struct ListTitle<'a>(pub(super) &'a [String]);
 
 impl Widget for ListTitle<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        Line::styled(self.0, TITLE_STYLE).render(area, buf);
+        for (ln, row) in std::iter::zip(self.0, area.rows()) {
+            Line::styled(ln, TITLE_STYLE).render(row, buf);
+        }
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct RadioOption<'a> {
-    pub(super) label: &'a str,
+    pub(super) label: &'a [String],
     pub(super) checked: bool,
     pub(super) focused: bool,
 }
@@ -35,7 +37,7 @@ impl Widget for RadioOption<'_> {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct MultiOption<'a> {
-    pub(super) label: &'a str,
+    pub(super) label: &'a [String],
     pub(super) checked: bool,
     pub(super) focused: bool,
 }
@@ -54,17 +56,26 @@ impl Widget for MultiOption<'_> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct MarkedOption<'a> {
     mark: &'a str,
-    label: &'a str,
+    label: &'a [String],
     focused: bool,
 }
 
 impl Widget for MarkedOption<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut line = Line::from(format!("{} {}", self.mark, self.label));
-        if self.focused {
-            line = line.style(HIGHLIGHT_STYLE);
+        let mut lineiter = self.label.iter();
+        let mut text = Text::default();
+        if let Some(ln) = lineiter.next() {
+            text.push_line(format!("{} {ln}", self.mark));
+        } else {
+            text.push_line(self.mark);
         }
-        line.render(area, buf);
+        for ln in lineiter {
+            text.push_line(format!("    {ln}"));
+        }
+        if self.focused {
+            text = text.style(HIGHLIGHT_STYLE);
+        }
+        text.render(area, buf);
     }
 }
 

@@ -255,10 +255,15 @@ impl<T> App<T> {
 
 impl<T> Widget for &App<T> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        for (row, elem) in std::iter::zip(area.rows(), &self.elements) {
+        let mut rest_area = area;
+        for elem in &self.elements {
+            let [rows, a2] =
+                Layout::vertical([Constraint::Length(elem.height()), Constraint::Fill(1)])
+                    .areas(rest_area);
+            rest_area = a2;
             match elem {
                 Element::ListTitle(txt) => {
-                    widgets::ListTitle(txt).render(row, buf);
+                    widgets::ListTitle(txt).render(rows, buf);
                 }
                 Element::RadioOption { list, option, text } => {
                     let list = *list;
@@ -273,7 +278,7 @@ impl<T> Widget for &App<T> {
                         Constraint::Length(self.option_highlight_width),
                         Constraint::Fill(1),
                     ])
-                    .areas(row);
+                    .areas(rows);
                     wdgt.render(line_area, buf);
                 }
                 Element::MultiOption { list, option, text } => {
@@ -289,7 +294,7 @@ impl<T> Widget for &App<T> {
                         Constraint::Length(self.option_highlight_width),
                         Constraint::Fill(1),
                     ])
-                    .areas(row);
+                    .areas(rows);
                     wdgt.render(line_area, buf);
                 }
                 Element::BlankLine => (),
@@ -303,7 +308,7 @@ impl<T> Widget for &App<T> {
                         Constraint::Length(BUTTON_BOX_WIDTH),
                         Constraint::Fill(2),
                     ])
-                    .areas(row);
+                    .areas(rows);
                     ok_button.render(ok_area, buf);
                     cancel_button.render(cancel_area, buf);
                 }
@@ -336,13 +341,17 @@ impl<T> From<Form<T>> for App<T> {
                         len: options.len(),
                         checked: default,
                     }));
-                    elements.push(Element::ListTitle(title));
+                    elements.push(Element::ListTitle(split_lines(&title)));
+
                     for (j, opt) in options.into_iter().enumerate() {
-                        option_highlight_width = option_highlight_width.max(opt.width());
+                        let text = split_lines(&opt);
+                        for ln in &text {
+                            option_highlight_width = option_highlight_width.max(ln.width());
+                        }
                         elements.push(Element::RadioOption {
                             list: i,
                             option: j,
-                            text: opt,
+                            text,
                         });
                     }
                 }
@@ -355,13 +364,16 @@ impl<T> From<Form<T>> for App<T> {
                         len: options.len(),
                         checked: defaults,
                     }));
-                    elements.push(Element::ListTitle(title));
+                    elements.push(Element::ListTitle(split_lines(&title)));
                     for (j, opt) in options.into_iter().enumerate() {
-                        option_highlight_width = option_highlight_width.max(opt.width());
+                        let text = split_lines(&opt);
+                        for ln in &text {
+                            option_highlight_width = option_highlight_width.max(ln.width());
+                        }
                         elements.push(Element::MultiOption {
                             list: i,
                             option: j,
-                            text: opt,
+                            text,
                         });
                     }
                 }
@@ -390,19 +402,32 @@ impl<T> From<Form<T>> for App<T> {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Element {
-    ListTitle(String),
+    ListTitle(Vec<String>),
     RadioOption {
         list: usize,
         option: usize,
-        text: String,
+        text: Vec<String>,
     },
     MultiOption {
         list: usize,
         option: usize,
-        text: String,
+        text: Vec<String>,
     },
     BlankLine,
     Buttons,
+}
+
+impl Element {
+    fn height(&self) -> u16 {
+        let len = match self {
+            Element::ListTitle(txt) => txt.len(),
+            Element::RadioOption { text, .. } => text.len(),
+            Element::MultiOption { text, .. } => text.len(),
+            Element::BlankLine => 1,
+            Element::Buttons => 1,
+        };
+        u16::try_from(len).unwrap_or(u16::MAX)
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -490,6 +515,13 @@ impl MultiData {
     fn into_selection(self) -> Selection {
         Selection::Multi(self.checked)
     }
+}
+
+fn split_lines(s: &str) -> Vec<String> {
+    s.trim_end_matches(['\r', '\n'])
+        .lines()
+        .map(ToOwned::to_owned)
+        .collect()
 }
 
 #[cfg(test)]
