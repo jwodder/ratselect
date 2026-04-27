@@ -1,3 +1,4 @@
+mod widgets;
 use crate::{Form, MultiSelector, RadioSelector, Selection, Selector};
 use crossterm::event::{Event, KeyCode, KeyModifiers, read};
 use ratatui::{
@@ -6,7 +7,6 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
     style::Style,
-    text::Line,
     widgets::Widget,
 };
 use std::collections::BTreeSet;
@@ -17,8 +17,6 @@ const OPTION_INDENT: u16 = 4;
 const HIGHLIGHT_STYLE: Style = Style::new().reversed();
 
 const TITLE_STYLE: Style = Style::new().bold();
-
-const CHECKMARK: char = 'X';
 
 const BUTTON_BOX_WIDTH: u16 = 8;
 
@@ -259,65 +257,45 @@ impl<T> Widget for &App<T> {
     fn render(self, area: Rect, buf: &mut Buffer) {
         for (row, elem) in std::iter::zip(area.rows(), &self.elements) {
             match elem {
-                Element::Text(txt) => {
-                    Line::styled(&**txt, TITLE_STYLE).render(row, buf);
+                Element::ListTitle(txt) => {
+                    widgets::ListTitle(txt).render(row, buf);
                 }
-                Element::RadioButton { list, option, text } => {
-                    let mark = if self.lists[*list].is_checked(*option) {
-                        CHECKMARK
-                    } else {
-                        ' '
+                Element::RadioOption { list, option, text } => {
+                    let list = *list;
+                    let option = *option;
+                    let wdgt = widgets::RadioOption {
+                        label: text,
+                        checked: self.lists[list].is_checked(option),
+                        focused: self.focus == (Focus::Item { list, option }),
                     };
-                    let mut line = Line::from(format!("({mark}) {text}"));
-                    if self.focus
-                        == (Focus::Item {
-                            list: *list,
-                            option: *option,
-                        })
-                    {
-                        line = line.style(HIGHLIGHT_STYLE);
-                    }
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
                         Constraint::Length(self.option_highlight_width),
                         Constraint::Fill(1),
                     ])
                     .areas(row);
-                    line.render(line_area, buf);
+                    wdgt.render(line_area, buf);
                 }
-                Element::Checkbox { list, option, text } => {
-                    let mark = if self.lists[*list].is_checked(*option) {
-                        CHECKMARK
-                    } else {
-                        ' '
+                Element::MultiOption { list, option, text } => {
+                    let list = *list;
+                    let option = *option;
+                    let wdgt = widgets::MultiOption {
+                        label: text,
+                        checked: self.lists[list].is_checked(option),
+                        focused: self.focus == (Focus::Item { list, option }),
                     };
-                    let mut line = Line::from(format!("[{mark}] {text}"));
-                    if self.focus
-                        == (Focus::Item {
-                            list: *list,
-                            option: *option,
-                        })
-                    {
-                        line = line.style(HIGHLIGHT_STYLE);
-                    }
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
                         Constraint::Length(self.option_highlight_width),
                         Constraint::Fill(1),
                     ])
                     .areas(row);
-                    line.render(line_area, buf);
+                    wdgt.render(line_area, buf);
                 }
                 Element::BlankLine => (),
                 Element::Buttons => {
-                    let mut ok_button = Line::from("<OK>").centered();
-                    if self.focus == Focus::OkButton {
-                        ok_button = ok_button.style(HIGHLIGHT_STYLE);
-                    }
-                    let mut cancel_button = Line::from("<Cancel>").centered();
-                    if self.focus == Focus::CancelButton {
-                        cancel_button = cancel_button.style(HIGHLIGHT_STYLE);
-                    }
+                    let ok_button = widgets::OkButton(self.focus == Focus::OkButton);
+                    let cancel_button = widgets::CancelButton(self.focus == Focus::CancelButton);
                     let [_, ok_area, _, cancel_area, _] = Layout::horizontal([
                         Constraint::Fill(2),
                         Constraint::Length(BUTTON_BOX_WIDTH),
@@ -358,10 +336,10 @@ impl<T> From<Form<T>> for App<T> {
                         len: options.len(),
                         checked: default,
                     }));
-                    elements.push(Element::Text(title));
+                    elements.push(Element::ListTitle(title));
                     for (j, opt) in options.into_iter().enumerate() {
                         option_highlight_width = option_highlight_width.max(opt.width());
-                        elements.push(Element::RadioButton {
+                        elements.push(Element::RadioOption {
                             list: i,
                             option: j,
                             text: opt,
@@ -377,10 +355,10 @@ impl<T> From<Form<T>> for App<T> {
                         len: options.len(),
                         checked: defaults,
                     }));
-                    elements.push(Element::Text(title));
+                    elements.push(Element::ListTitle(title));
                     for (j, opt) in options.into_iter().enumerate() {
                         option_highlight_width = option_highlight_width.max(opt.width());
-                        elements.push(Element::Checkbox {
+                        elements.push(Element::MultiOption {
                             list: i,
                             option: j,
                             text: opt,
@@ -412,13 +390,13 @@ impl<T> From<Form<T>> for App<T> {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Element {
-    Text(String),
-    RadioButton {
+    ListTitle(String),
+    RadioOption {
         list: usize,
         option: usize,
         text: String,
     },
-    Checkbox {
+    MultiOption {
         list: usize,
         option: usize,
         text: String,
