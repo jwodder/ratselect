@@ -13,7 +13,31 @@ const FLAVORS: [&str; 7] = [
 
 const TOPPINGS: [&str; 5] = ["Whipped Cream", "Hot Fudge", "Nuts", "Cherry", "Banana"];
 
-const OPTION_HIGHLIGHT_WIDTH: u16 = 23;
+mod areas {
+    use super::*;
+
+    const OPTION_HIGHLIGHT_WIDTH: u16 = 23;
+
+    pub(super) const FLAVORS: Rect = Rect::new(0, 0, 80, 1);
+    pub(super) const VANILLA: Rect = Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1);
+    pub(super) const CHOCOLATE: Rect = Rect::new(OPTION_INDENT, 2, OPTION_HIGHLIGHT_WIDTH, 1);
+    pub(super) const STRAWBERRY: Rect = Rect::new(OPTION_INDENT, 3, OPTION_HIGHLIGHT_WIDTH, 1);
+    pub(super) const CINNAMON: Rect = Rect::new(OPTION_INDENT, 4, OPTION_HIGHLIGHT_WIDTH, 1);
+    //pub(super) const BUTTERSCOTCH: Rect = Rect::new(OPTION_INDENT, 5, OPTION_HIGHLIGHT_WIDTH, 1);
+    //pub(super) const PEANUT_BUTTER_FUDGE: Rect =
+    //    Rect::new(OPTION_INDENT, 6, OPTION_HIGHLIGHT_WIDTH, 1);
+    //pub(super) const CHILI: Rect = Rect::new(OPTION_INDENT, 7, OPTION_HIGHLIGHT_WIDTH, 1);
+
+    pub(super) const TOPPINGS: Rect = Rect::new(0, 9, 80, 1);
+    pub(super) const WHIPPED_CREAM: Rect = Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1);
+    pub(super) const HOT_FUDGE: Rect = Rect::new(OPTION_INDENT, 11, OPTION_HIGHLIGHT_WIDTH, 1);
+    //pub(super) const NUTS: Rect = Rect::new(OPTION_INDENT, 12, OPTION_HIGHLIGHT_WIDTH, 1);
+    //pub(super) const CHERRY: Rect = Rect::new(OPTION_INDENT, 13, OPTION_HIGHLIGHT_WIDTH, 1);
+    pub(super) const BANANA: Rect = Rect::new(OPTION_INDENT, 14, OPTION_HIGHLIGHT_WIDTH, 1);
+
+    pub(super) const OK: Rect = Rect::new(26, 16, 8, 1);
+    pub(super) const CANCEL: Rect = Rect::new(46, 16, 8, 1);
+}
 
 #[test]
 fn draw_flavors() {
@@ -50,12 +74,9 @@ fn draw_flavors() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -99,9 +120,9 @@ fn ok_flavors() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(26, 16, 8, 1), HIGHLIGHT_STYLE); // "  <OK>  "
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::OK, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert_eq!(
@@ -155,9 +176,9 @@ fn cancel_flavors() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(46, 16, 8, 1), HIGHLIGHT_STYLE); // "<Cancel>"
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CANCEL, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert_eq!(app.get_output(), Some(None));
@@ -202,12 +223,9 @@ fn double_click_radio() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 2, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Chocolate" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CHOCOLATE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -240,12 +258,9 @@ fn double_click_radio() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 2, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Chocolate" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CHOCOLATE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -307,12 +322,9 @@ fn double_click_checkbox() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -345,12 +357,9 @@ fn double_click_checkbox() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -383,12 +392,9 @@ fn double_click_checkbox() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -442,12 +448,9 @@ fn change_and_cancel() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 2, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Chocolate" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CHOCOLATE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -480,12 +483,9 @@ fn change_and_cancel() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 2, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Chocolate" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CHOCOLATE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -537,12 +537,9 @@ fn click_two_radios() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 2, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Chocolate" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CHOCOLATE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -575,12 +572,9 @@ fn click_two_radios() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 2, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Chocolate" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CHOCOLATE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
@@ -615,12 +609,9 @@ fn click_two_radios() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 4, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Cinnamon" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CINNAMON, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -653,12 +644,9 @@ fn click_two_radios() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 4, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Cinnamon" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CINNAMON, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -716,12 +704,9 @@ fn check_two_boxes() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 11, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Hot Fudge" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::HOT_FUDGE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -754,12 +739,9 @@ fn check_two_boxes() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 11, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Hot Fudge" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::HOT_FUDGE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
@@ -796,12 +778,9 @@ fn check_two_boxes() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 14, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Banana" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::BANANA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -834,12 +813,9 @@ fn check_two_boxes() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 14, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Banana" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::BANANA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -893,12 +869,9 @@ fn check_two_boxes_then_uncheck_first() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -931,12 +904,9 @@ fn check_two_boxes_then_uncheck_first() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
@@ -969,12 +939,9 @@ fn check_two_boxes_then_uncheck_first() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 11, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Hot Fudge" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::HOT_FUDGE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -1007,12 +974,9 @@ fn check_two_boxes_then_uncheck_first() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 11, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Hot Fudge" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::HOT_FUDGE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Up.into()));
@@ -1045,12 +1009,9 @@ fn check_two_boxes_then_uncheck_first() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
@@ -1083,12 +1044,9 @@ fn check_two_boxes_then_uncheck_first() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -1142,12 +1100,9 @@ fn tab_around() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -1180,9 +1135,9 @@ fn tab_around() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(26, 16, 8, 1), HIGHLIGHT_STYLE); // "  <OK>  "
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::OK, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -1215,9 +1170,9 @@ fn tab_around() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(46, 16, 8, 1), HIGHLIGHT_STYLE); // "<Cancel>"
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CANCEL, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -1250,12 +1205,9 @@ fn tab_around() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -1298,9 +1250,9 @@ fn shift_tab_around() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(46, 16, 8, 1), HIGHLIGHT_STYLE); // "<Cancel>"
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CANCEL, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
@@ -1333,9 +1285,9 @@ fn shift_tab_around() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(26, 16, 8, 1), HIGHLIGHT_STYLE); // "  <OK>  "
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::OK, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
@@ -1368,12 +1320,9 @@ fn shift_tab_around() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
@@ -1406,12 +1355,9 @@ fn shift_tab_around() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -1458,12 +1404,9 @@ fn down_tab_shift_tab() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 4, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Cinnamon" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CINNAMON, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -1496,12 +1439,9 @@ fn down_tab_shift_tab() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
@@ -1534,12 +1474,9 @@ fn down_tab_shift_tab() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -1586,12 +1523,9 @@ fn down_shift_tab_tab() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 4, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Cinnamon" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CINNAMON, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
@@ -1624,9 +1558,9 @@ fn down_shift_tab_tab() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(46, 16, 8, 1), HIGHLIGHT_STYLE); // "<Cancel>"
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CANCEL, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -1659,12 +1593,9 @@ fn down_shift_tab_tab() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -1709,9 +1640,9 @@ fn down_all_the_way() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(26, 16, 8, 1), HIGHLIGHT_STYLE); // "  <OK>  "
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::OK, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Right.into()));
@@ -1744,9 +1675,9 @@ fn down_all_the_way() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(46, 16, 8, 1), HIGHLIGHT_STYLE); // "<Cancel>"
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CANCEL, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Left.into()));
@@ -1779,9 +1710,9 @@ fn down_all_the_way() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(26, 16, 8, 1), HIGHLIGHT_STYLE); // "  <OK>  "
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::OK, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -1824,9 +1755,9 @@ fn goto_bottom() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(26, 16, 8, 1), HIGHLIGHT_STYLE); // "  <OK>  "
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::OK, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Right.into()));
@@ -1859,9 +1790,9 @@ fn goto_bottom() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(46, 16, 8, 1), HIGHLIGHT_STYLE); // "<Cancel>"
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CANCEL, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::End.into()));
@@ -1894,9 +1825,9 @@ fn goto_bottom() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(26, 16, 8, 1), HIGHLIGHT_STYLE); // "  <OK>  "
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::OK, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::End.into()));
@@ -1947,12 +1878,9 @@ fn down_then_goto_top() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 3, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Strawberry" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::STRAWBERRY, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Home.into()));
@@ -1985,12 +1913,9 @@ fn down_then_goto_top() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -2035,12 +1960,9 @@ fn down_tab_then_goto_top() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 3, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Strawberry" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::STRAWBERRY, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -2073,12 +1995,9 @@ fn down_tab_then_goto_top() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 10, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Whipped Cream" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::WHIPPED_CREAM, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Home.into()));
@@ -2111,12 +2030,9 @@ fn down_tab_then_goto_top() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -2161,12 +2077,9 @@ fn goto_top_from_ok() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 3, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Strawberry" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::STRAWBERRY, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::End.into()));
@@ -2199,9 +2112,9 @@ fn goto_top_from_ok() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(26, 16, 8, 1), HIGHLIGHT_STYLE); // "  <OK>  "
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::OK, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Home.into()));
@@ -2234,12 +2147,9 @@ fn goto_top_from_ok() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -2284,12 +2194,9 @@ fn goto_top_from_cancel() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 3, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Strawberry" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::STRAWBERRY, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::End.into()));
@@ -2324,9 +2231,9 @@ fn goto_top_from_cancel() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(Rect::new(46, 16, 8, 1), HIGHLIGHT_STYLE); // "<Cancel>"
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CANCEL, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Home.into()));
@@ -2359,12 +2266,9 @@ fn goto_top_from_cancel() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -2410,12 +2314,9 @@ fn ok_custom_defaults() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::End.into()));
@@ -2472,12 +2373,9 @@ fn change_custom_defaults() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Vanilla" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::VANILLA, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
@@ -2512,12 +2410,9 @@ fn change_custom_defaults() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 2, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Chocolate" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::CHOCOLATE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -2555,12 +2450,9 @@ fn change_custom_defaults() {
         "                                                                                ",
         "                                                                                ",
     ]);
-    expected.set_style(Rect::new(0, 0, 80, 1), TITLE_STYLE); // "Flavors:"
-    expected.set_style(Rect::new(0, 9, 80, 1), TITLE_STYLE); // "Toppings:"
-    expected.set_style(
-        Rect::new(OPTION_INDENT, 11, OPTION_HIGHLIGHT_WIDTH, 1),
-        HIGHLIGHT_STYLE,
-    ); // "Hot Fudge" line
+    expected.set_style(areas::FLAVORS, TITLE_STYLE);
+    expected.set_style(areas::TOPPINGS, TITLE_STYLE);
+    expected.set_style(areas::HOT_FUDGE, HIGHLIGHT_STYLE);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::End.into()));
