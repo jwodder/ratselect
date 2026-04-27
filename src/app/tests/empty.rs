@@ -33,7 +33,7 @@ mod areas {
 
     pub(super) const SCREEN: Rect = Rect::new(0, 0, 80, 24);
 
-    pub(super) const OK: Rect = Rect::new(26, 0, 8, 1);
+    pub(super) const OK: Rect = Rect::new(28, 0, 4, 1);
     pub(super) const CANCEL: Rect = Rect::new(46, 0, 8, 1);
 }
 

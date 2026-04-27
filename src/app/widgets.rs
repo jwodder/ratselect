@@ -1,5 +1,10 @@
 use super::{HIGHLIGHT_STYLE, TITLE_STYLE};
-use ratatui::{buffer::Buffer, layout::Rect, text::Line, widgets::Widget};
+use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    text::{Line, Span},
+    widgets::Widget,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct ListTitle<'a>(pub(super) &'a str);
@@ -68,11 +73,11 @@ pub(super) struct OkButton(pub(super) bool);
 
 impl Widget for OkButton {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut wdgt = Line::from("<OK>").centered();
+        let mut wdgt = Span::from("<OK>");
         if self.0 {
             wdgt = wdgt.style(HIGHLIGHT_STYLE);
         }
-        wdgt.render(area, buf);
+        wdgt.into_centered_line().render(area, buf);
     }
 }
 
@@ -81,10 +86,10 @@ pub(super) struct CancelButton(pub(super) bool);
 
 impl Widget for CancelButton {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut wdgt = Line::from("<Cancel>").centered();
+        let mut wdgt = Span::from("<Cancel>");
         if self.0 {
             wdgt = wdgt.style(HIGHLIGHT_STYLE);
         }
-        wdgt.render(area, buf);
+        wdgt.into_centered_line().render(area, buf);
     }
 }
