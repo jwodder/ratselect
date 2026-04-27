@@ -18,6 +18,8 @@ mod areas {
 
     const OPTION_HIGHLIGHT_WIDTH: u16 = 23;
 
+    pub(super) const SCREEN: Rect = Rect::new(0, 0, 80, 24);
+
     pub(super) const FLAVORS: Rect = Rect::new(0, 0, 80, 1);
     pub(super) const VANILLA: Rect = Rect::new(OPTION_INDENT, 1, OPTION_HIGHLIGHT_WIDTH, 1);
     pub(super) const CHOCOLATE: Rect = Rect::new(OPTION_INDENT, 2, OPTION_HIGHLIGHT_WIDTH, 1);
@@ -45,9 +47,8 @@ fn draw_flavors() {
     form.add("flavor", RadioSelector::new("Flavors:", FLAVORS));
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let app = App::from(form);
-    let area = Rect::new(0, 0, 80, 24);
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -91,9 +92,8 @@ fn ok_flavors() {
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -147,9 +147,8 @@ fn cancel_flavors() {
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -191,12 +190,11 @@ fn double_click_radio() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -230,8 +228,8 @@ fn double_click_radio() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    ( ) Vanilla                                                                 ",
@@ -265,8 +263,8 @@ fn double_click_radio() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     pretty_assertions::assert_eq!(buffer, expected);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
@@ -290,12 +288,11 @@ fn double_click_checkbox() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -329,8 +326,8 @@ fn double_click_checkbox() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -364,8 +361,8 @@ fn double_click_checkbox() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -416,12 +413,11 @@ fn change_and_cancel() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -455,8 +451,8 @@ fn change_and_cancel() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    ( ) Vanilla                                                                 ",
@@ -505,12 +501,11 @@ fn click_two_radios() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -544,8 +539,8 @@ fn click_two_radios() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    ( ) Vanilla                                                                 ",
@@ -581,8 +576,8 @@ fn click_two_radios() {
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    ( ) Vanilla                                                                 ",
@@ -616,8 +611,8 @@ fn click_two_radios() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    ( ) Vanilla                                                                 ",
@@ -670,14 +665,13 @@ fn check_two_boxes() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -711,8 +705,8 @@ fn check_two_boxes() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -750,8 +744,8 @@ fn check_two_boxes() {
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -785,8 +779,8 @@ fn check_two_boxes() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -837,12 +831,11 @@ fn check_two_boxes_then_uncheck_first() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -876,8 +869,8 @@ fn check_two_boxes_then_uncheck_first() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -911,8 +904,8 @@ fn check_two_boxes_then_uncheck_first() {
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -946,8 +939,8 @@ fn check_two_boxes_then_uncheck_first() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -981,8 +974,8 @@ fn check_two_boxes_then_uncheck_first() {
 
     app.handle_event(Event::Key(KeyCode::Up.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1016,8 +1009,8 @@ fn check_two_boxes_then_uncheck_first() {
 
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1068,12 +1061,11 @@ fn tab_around() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1107,8 +1099,8 @@ fn tab_around() {
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1142,8 +1134,8 @@ fn tab_around() {
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1177,8 +1169,8 @@ fn tab_around() {
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1218,12 +1210,11 @@ fn shift_tab_around() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1257,8 +1248,8 @@ fn shift_tab_around() {
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1292,8 +1283,8 @@ fn shift_tab_around() {
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1327,8 +1318,8 @@ fn shift_tab_around() {
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1368,7 +1359,6 @@ fn down_tab_shift_tab() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
@@ -1376,8 +1366,8 @@ fn down_tab_shift_tab() {
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1411,8 +1401,8 @@ fn down_tab_shift_tab() {
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1446,8 +1436,8 @@ fn down_tab_shift_tab() {
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1487,7 +1477,6 @@ fn down_shift_tab_tab() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
@@ -1495,8 +1484,8 @@ fn down_shift_tab_tab() {
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1530,8 +1519,8 @@ fn down_shift_tab_tab() {
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1565,8 +1554,8 @@ fn down_shift_tab_tab() {
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1606,14 +1595,13 @@ fn down_all_the_way() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     for _ in 0..12 {
         app.handle_event(Event::Key(KeyCode::Down.into()));
         assert!(app.get_output().is_none());
     }
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1647,8 +1635,8 @@ fn down_all_the_way() {
 
     app.handle_event(Event::Key(KeyCode::Right.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1682,8 +1670,8 @@ fn down_all_the_way() {
 
     app.handle_event(Event::Key(KeyCode::Left.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1723,12 +1711,11 @@ fn goto_bottom() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::End.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1762,8 +1749,8 @@ fn goto_bottom() {
 
     app.handle_event(Event::Key(KeyCode::Right.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1797,8 +1784,8 @@ fn goto_bottom() {
 
     app.handle_event(Event::Key(KeyCode::End.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1832,8 +1819,8 @@ fn goto_bottom() {
 
     app.handle_event(Event::Key(KeyCode::End.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     pretty_assertions::assert_eq!(buffer, expected);
 }
 
@@ -1844,14 +1831,13 @@ fn down_then_goto_top() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1885,8 +1871,8 @@ fn down_then_goto_top() {
 
     app.handle_event(Event::Key(KeyCode::Home.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1926,14 +1912,13 @@ fn down_tab_then_goto_top() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -1967,8 +1952,8 @@ fn down_tab_then_goto_top() {
 
     app.handle_event(Event::Key(KeyCode::Tab.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -2002,8 +1987,8 @@ fn down_tab_then_goto_top() {
 
     app.handle_event(Event::Key(KeyCode::Home.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -2043,14 +2028,13 @@ fn goto_top_from_ok() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -2084,8 +2068,8 @@ fn goto_top_from_ok() {
 
     app.handle_event(Event::Key(KeyCode::End.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -2119,8 +2103,8 @@ fn goto_top_from_ok() {
 
     app.handle_event(Event::Key(KeyCode::Home.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -2160,14 +2144,13 @@ fn goto_top_from_cancel() {
     form.add("toppings", MultiSelector::new("Toppings:", TOPPINGS));
     let mut app = App::from(form);
     assert!(app.get_output().is_none());
-    let area = Rect::new(0, 0, 80, 24);
 
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -2203,8 +2186,8 @@ fn goto_top_from_cancel() {
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Right.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -2238,8 +2221,8 @@ fn goto_top_from_cancel() {
 
     app.handle_event(Event::Key(KeyCode::Home.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    (X) Vanilla                                                                 ",
@@ -2284,10 +2267,9 @@ fn ok_custom_defaults() {
         MultiSelector::new("Toppings:", TOPPINGS).with_defaults([1, 2]),
     );
     let mut app = App::from(form);
-    let area = Rect::new(0, 0, 80, 24);
 
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    ( ) Vanilla                                                                 ",
@@ -2343,10 +2325,9 @@ fn change_custom_defaults() {
         MultiSelector::new("Toppings:", TOPPINGS).with_defaults([1, 2]),
     );
     let mut app = App::from(form);
-    let area = Rect::new(0, 0, 80, 24);
 
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    ( ) Vanilla                                                                 ",
@@ -2382,8 +2363,8 @@ fn change_custom_defaults() {
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Enter.into()));
     assert!(app.get_output().is_none());
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    ( ) Vanilla                                                                 ",
@@ -2422,8 +2403,8 @@ fn change_custom_defaults() {
     app.handle_event(Event::Key(KeyCode::Down.into()));
     assert!(app.get_output().is_none());
     app.handle_event(Event::Key(KeyCode::Enter.into()));
-    let mut buffer = Buffer::empty(area);
-    app.render(area, &mut buffer);
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
         "Flavors:                                                                        ",
         "    ( ) Vanilla                                                                 ",
