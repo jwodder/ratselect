@@ -1,6 +1,6 @@
 mod widgets;
 use crate::{Form, MultiSelector, RadioSelector, Selection, Selector};
-use crossterm::event::{Event, KeyCode, KeyModifiers, read};
+use crossterm::event::{Event, KeyCode, KeyModifiers, poll, read};
 use ratatui::{
     Terminal,
     backend::Backend,
@@ -10,6 +10,7 @@ use ratatui::{
     widgets::Widget,
 };
 use std::collections::BTreeSet;
+use std::time::Duration;
 use unicode_width::UnicodeWidthStr;
 
 const OPTION_INDENT: u16 = 4;
@@ -62,7 +63,20 @@ impl<T> App<T> {
 
     /// Receive & handle the next input event or lack thereof
     fn process_input(&mut self) -> std::io::Result<()> {
-        self.handle_event(read()?);
+        let ev = read()?;
+        if ev.is_resize() {
+            while poll(Duration::from_millis(50))? {
+                let ev = read()?;
+                if !ev.is_resize() {
+                    self.handle_event(ev);
+                    break;
+                }
+            }
+            // If we only encountered resize events, return anyway so the loop
+            // in `run()` will then redraw the screen.
+        } else {
+            self.handle_event(ev);
+        }
         Ok(())
     }
 
