@@ -9,7 +9,9 @@ use ratatui::{
     style::Style,
     widgets::Widget,
 };
+use std::borrow::Cow;
 use std::collections::BTreeSet;
+use std::rc::Rc;
 use std::time::Duration;
 use unicode_width::UnicodeWidthStr;
 
@@ -31,7 +33,7 @@ pub(crate) struct App<T> {
     quitting: bool,
     /// Did the user end the form by pressing "OK"?
     ok: bool,
-    option_highlight_width: u16,
+    wrap_cache: Option<WrapCache>,
 }
 
 impl<T> App<T> {
@@ -53,7 +55,7 @@ impl<T> App<T> {
     }
 
     /// Draw the current screen on the terminal
-    fn draw<B: Backend>(&self, terminal: &mut Terminal<B>) -> std::io::Result<()>
+    fn draw<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> std::io::Result<()>
     where
         std::io::Error: From<B::Error>,
     {
@@ -265,16 +267,105 @@ impl<T> App<T> {
             Focus::CancelButton => self.quitting = true,
         }
     }
+
+    fn get_wrapped_elements(&mut self, screen_width: u16) -> (u16, Rc<[Element]>) {
+        if let Some(ref wc) = self.wrap_cache
+            && wc.screen_width == screen_width
+        {
+            (wc.option_highlight_width, Rc::clone(&wc.elements))
+        } else {
+            let max_title_width = usize::from(screen_width.saturating_sub(1));
+            let max_option_label_width = usize::from(screen_width.saturating_sub(
+                OPTION_INDENT + 4 /* for boxes */ + 1, /* for scrollbar */
+            ));
+            let mut option_highlight_width = 0;
+            let mut elements = Vec::with_capacity(self.elements.len());
+            for elem in &self.elements {
+                match elem {
+                    Element::ListTitle(txt) => {
+                        let wrapped = txt
+                            .iter()
+                            .flat_map(|ln| {
+                                textwrap::wrap(
+                                    ln,
+                                    textwrap::Options::new(max_title_width).break_words(true),
+                                )
+                            })
+                            .map(Cow::into_owned)
+                            .collect();
+                        elements.push(Element::ListTitle(wrapped));
+                    }
+                    Element::RadioOption { list, option, text } => {
+                        let wrapped = text
+                            .iter()
+                            .flat_map(|ln| {
+                                textwrap::wrap(
+                                    ln,
+                                    textwrap::Options::new(max_option_label_width)
+                                        .break_words(true),
+                                )
+                            })
+                            .inspect(|ln| {
+                                option_highlight_width = option_highlight_width.max(ln.width());
+                            })
+                            .map(Cow::into_owned)
+                            .collect();
+                        elements.push(Element::RadioOption {
+                            list: *list,
+                            option: *option,
+                            text: wrapped,
+                        });
+                    }
+                    Element::MultiOption { list, option, text } => {
+                        let wrapped = text
+                            .iter()
+                            .flat_map(|ln| {
+                                textwrap::wrap(
+                                    ln,
+                                    textwrap::Options::new(max_option_label_width)
+                                        .break_words(true),
+                                )
+                            })
+                            .inspect(|ln| {
+                                option_highlight_width = option_highlight_width.max(ln.width());
+                            })
+                            .map(Cow::into_owned)
+                            .collect();
+                        elements.push(Element::MultiOption {
+                            list: *list,
+                            option: *option,
+                            text: wrapped,
+                        });
+                    }
+                    Element::BlankLine => elements.push(Element::BlankLine),
+                    Element::Buttons => elements.push(Element::Buttons),
+                }
+            }
+            let elements = Rc::<[Element]>::from(elements);
+            let option_highlight_width = u16::try_from(option_highlight_width)
+                .unwrap_or(u16::MAX)
+                .saturating_add(4);
+            let r = (option_highlight_width, Rc::clone(&elements));
+            self.wrap_cache = Some(WrapCache {
+                screen_width,
+                option_highlight_width,
+                elements,
+            });
+            r
+        }
+    }
 }
 
-impl<T> Widget for &App<T> {
+impl<T> Widget for &mut App<T> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut rest_area = area;
-        for elem in &self.elements {
+        let (option_highlight_width, elements) = self.get_wrapped_elements(area.width);
+        let [mut area, _scrollbar_area] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)]).areas(area);
+        for elem in &*elements {
             let [rows, a2] =
                 Layout::vertical([Constraint::Length(elem.height()), Constraint::Fill(1)])
-                    .areas(rest_area);
-            rest_area = a2;
+                    .areas(area);
+            area = a2;
             match elem {
                 Element::ListTitle(txt) => {
                     widgets::ListTitle(txt).render(rows, buf);
@@ -289,7 +380,7 @@ impl<T> Widget for &App<T> {
                     };
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
-                        Constraint::Length(self.option_highlight_width),
+                        Constraint::Length(option_highlight_width),
                         Constraint::Fill(1),
                     ])
                     .areas(rows);
@@ -305,7 +396,7 @@ impl<T> Widget for &App<T> {
                     };
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
-                        Constraint::Length(self.option_highlight_width),
+                        Constraint::Length(option_highlight_width),
                         Constraint::Fill(1),
                     ])
                     .areas(rows);
@@ -337,7 +428,6 @@ impl<T> From<Form<T>> for App<T> {
         let mut keys = Vec::with_capacity(capacity);
         let mut lists = Vec::with_capacity(capacity);
         let mut elements = Vec::with_capacity(capacity.saturating_mul(3));
-        let mut option_highlight_width = 0;
         for (i, (key, s)) in form
             .selectors
             .into_iter()
@@ -358,14 +448,10 @@ impl<T> From<Form<T>> for App<T> {
                     elements.push(Element::ListTitle(split_lines(&title)));
 
                     for (j, opt) in options.into_iter().enumerate() {
-                        let text = split_lines(&opt);
-                        for ln in &text {
-                            option_highlight_width = option_highlight_width.max(ln.width());
-                        }
                         elements.push(Element::RadioOption {
                             list: i,
                             option: j,
-                            text,
+                            text: split_lines(&opt),
                         });
                     }
                 }
@@ -380,14 +466,10 @@ impl<T> From<Form<T>> for App<T> {
                     }));
                     elements.push(Element::ListTitle(split_lines(&title)));
                     for (j, opt) in options.into_iter().enumerate() {
-                        let text = split_lines(&opt);
-                        for ln in &text {
-                            option_highlight_width = option_highlight_width.max(ln.width());
-                        }
                         elements.push(Element::MultiOption {
                             list: i,
                             option: j,
-                            text,
+                            text: split_lines(&opt),
                         });
                     }
                 }
@@ -407,9 +489,7 @@ impl<T> From<Form<T>> for App<T> {
             focus,
             quitting: false,
             ok: false,
-            option_highlight_width: u16::try_from(option_highlight_width)
-                .unwrap_or(u16::MAX)
-                .saturating_add(4),
+            wrap_cache: None,
         }
     }
 }
@@ -529,6 +609,13 @@ impl MultiData {
     fn into_selection(self) -> Selection {
         Selection::Multi(self.checked)
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct WrapCache {
+    screen_width: u16,
+    option_highlight_width: u16,
+    elements: Rc<[Element]>,
 }
 
 fn split_lines(s: &str) -> Vec<String> {

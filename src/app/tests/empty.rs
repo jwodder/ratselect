@@ -2,7 +2,7 @@ use crate::app::*;
 use ratatui::{buffer::Buffer, layout::Rect};
 
 const LINES: [&str; 24] = [
-    "                            <OK>              <Cancel>                          ",
+    "                           <OK>               <Cancel>                          ",
     "                                                                                ",
     "                                                                                ",
     "                                                                                ",
@@ -33,13 +33,13 @@ mod areas {
 
     pub(super) const SCREEN: Rect = Rect::new(0, 0, 80, 24);
 
-    pub(super) const OK: Rect = Rect::new(28, 0, 4, 1);
+    pub(super) const OK: Rect = Rect::new(27, 0, 4, 1);
     pub(super) const CANCEL: Rect = Rect::new(46, 0, 8, 1);
 }
 
 #[test]
 fn draw_empty() {
-    let app = App::<()>::from(Form::new());
+    let mut app = App::<()>::from(Form::new());
     let mut buffer = Buffer::empty(areas::SCREEN);
     app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines(LINES);
