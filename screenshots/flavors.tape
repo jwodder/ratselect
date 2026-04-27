@@ -7,7 +7,8 @@ Set Height 350
 Set Padding 0
 Type "cargo run --example flavors"
 Enter
-Sleep 2s
+Wait+Screen /Toppings/
+Sleep 500ms
 Screenshot flavors.png
 Type q
 Sleep 500ms

@@ -10,8 +10,9 @@ use ratatui::{
     widgets::Widget,
 };
 use std::collections::BTreeSet;
+use unicode_width::UnicodeWidthStr;
 
-const OPTION_INDENT: usize = 4;
+const OPTION_INDENT: u16 = 4;
 
 const HIGHLIGHT_STYLE: Style = Style::new().reversed();
 
@@ -31,6 +32,7 @@ pub(crate) struct App<T> {
     quitting: bool,
     /// Did the user end the form by pressing "OK"?
     ok: bool,
+    option_highlight_width: u16,
 }
 
 impl<T> App<T> {
@@ -266,11 +268,7 @@ impl<T> Widget for &App<T> {
                     } else {
                         ' '
                     };
-                    let mut line = Line::from(format!(
-                        "{sp:width$}({mark}) {text}",
-                        sp = "",
-                        width = OPTION_INDENT
-                    ));
+                    let mut line = Line::from(format!("({mark}) {text}"));
                     if self.focus
                         == (Focus::Item {
                             list: *list,
@@ -279,7 +277,13 @@ impl<T> Widget for &App<T> {
                     {
                         line = line.style(HIGHLIGHT_STYLE);
                     }
-                    line.render(row, buf);
+                    let [_, line_area, _] = Layout::horizontal([
+                        Constraint::Length(OPTION_INDENT),
+                        Constraint::Length(self.option_highlight_width),
+                        Constraint::Fill(1),
+                    ])
+                    .areas(row);
+                    line.render(line_area, buf);
                 }
                 Element::Checkbox { list, option, text } => {
                     let mark = if self.lists[*list].is_checked(*option) {
@@ -287,11 +291,7 @@ impl<T> Widget for &App<T> {
                     } else {
                         ' '
                     };
-                    let mut line = Line::from(format!(
-                        "{sp:width$}[{mark}] {text}",
-                        sp = "",
-                        width = OPTION_INDENT
-                    ));
+                    let mut line = Line::from(format!("[{mark}] {text}"));
                     if self.focus
                         == (Focus::Item {
                             list: *list,
@@ -300,7 +300,13 @@ impl<T> Widget for &App<T> {
                     {
                         line = line.style(HIGHLIGHT_STYLE);
                     }
-                    line.render(row, buf);
+                    let [_, line_area, _] = Layout::horizontal([
+                        Constraint::Length(OPTION_INDENT),
+                        Constraint::Length(self.option_highlight_width),
+                        Constraint::Fill(1),
+                    ])
+                    .areas(row);
+                    line.render(line_area, buf);
                 }
                 Element::BlankLine => (),
                 Element::Buttons => {
@@ -334,6 +340,7 @@ impl<T> From<Form<T>> for App<T> {
         let mut keys = Vec::with_capacity(capacity);
         let mut lists = Vec::with_capacity(capacity);
         let mut elements = Vec::with_capacity(capacity.saturating_mul(3));
+        let mut option_highlight_width = 0;
         for (i, (key, s)) in form
             .selectors
             .into_iter()
@@ -353,6 +360,7 @@ impl<T> From<Form<T>> for App<T> {
                     }));
                     elements.push(Element::Text(title));
                     for (j, opt) in options.into_iter().enumerate() {
+                        option_highlight_width = option_highlight_width.max(opt.width());
                         elements.push(Element::RadioButton {
                             list: i,
                             option: j,
@@ -371,6 +379,7 @@ impl<T> From<Form<T>> for App<T> {
                     }));
                     elements.push(Element::Text(title));
                     for (j, opt) in options.into_iter().enumerate() {
+                        option_highlight_width = option_highlight_width.max(opt.width());
                         elements.push(Element::Checkbox {
                             list: i,
                             option: j,
@@ -394,6 +403,9 @@ impl<T> From<Form<T>> for App<T> {
             focus,
             quitting: false,
             ok: false,
+            option_highlight_width: u16::try_from(option_highlight_width)
+                .unwrap_or(u16::MAX)
+                .saturating_add(4),
         }
     }
 }
