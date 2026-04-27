@@ -36,7 +36,7 @@ The terminal interface supports the following keybindings:
 | <kbd>h</kbd>, <kbd>Left</kbd>              | Move left one item                                                         |
 | <kbd>l</kbd>, <kbd>Right</kbd>             | Move right one item                                                        |
 | <kbd>g</kbd>, <kbd>Home</kbd>              | Go to first item                                                           |
-| <kbd>G</kbd>, <kbd>End</kbd>               | Go to last item                                                            |
+| <kbd>G</kbd>, <kbd>End</kbd>               | Go to start of last line (i.e., the "OK" button)                           |
 | <kbd>Tab</kbd>                             | Go to start of next selection list or next button, wrapping around         |
 | <kbd>Shift</kbd>+<kbd>Tab</kbd>            | Go to start of previous selection list or previous button, wrapping around |
 | <kbd>Enter</kbd>, <kbd>Space</kbd>         | Select/toggle/activate current selection                                   |
