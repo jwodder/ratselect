@@ -37,7 +37,7 @@ mod areas {
     //pub(super) const CHERRY: Rect = Rect::new(OPTION_INDENT, 13, OPTION_HIGHLIGHT_WIDTH, 1);
     pub(super) const BANANA: Rect = Rect::new(OPTION_INDENT, 14, OPTION_HIGHLIGHT_WIDTH, 1);
 
-    pub(super) const OK: Rect = Rect::new(26, 16, 8, 1);
+    pub(super) const OK: Rect = Rect::new(28, 16, 4, 1);
     pub(super) const CANCEL: Rect = Rect::new(46, 16, 8, 1);
 }
 
