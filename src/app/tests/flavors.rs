@@ -1,4 +1,4 @@
-use super::*;
+use crate::app::*;
 use ratatui::{buffer::Buffer, layout::Rect};
 
 const FLAVORS: [&str; 7] = [
