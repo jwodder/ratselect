@@ -166,8 +166,8 @@ impl<T> App<T> {
                     self.focus = Focus::OkButton;
                 }
             }
+            self.adjscroll();
         }
-        // TODO: Scroll
     }
 
     fn move_up(&mut self) {
@@ -183,12 +183,14 @@ impl<T> App<T> {
                         option,
                         index: index - 1,
                     };
+                    self.adjscroll();
                 } else if let Some(list) = list.checked_sub(1) {
                     self.focus = Focus::Item {
                         list,
                         option: self.lists[list].len() - 1,
                         index: index - 3,
                     };
+                    self.adjscroll();
                 }
                 // Else: We're at the top
             }
@@ -199,11 +201,11 @@ impl<T> App<T> {
                         option: self.lists[list].len() - 1,
                         index: self.elements.len() - 3,
                     };
+                    self.adjscroll();
                 }
                 // Else: content is empty; can't move up
             }
         }
-        // TODO: Scroll
     }
 
     fn move_right(&mut self) {
@@ -226,18 +228,19 @@ impl<T> App<T> {
         if self.is_empty() {
             self.focus = Focus::OkButton;
         } else {
+            self.scroll_offset = 0;
             self.focus = Focus::Item {
                 list: 0,
                 option: 0,
                 index: 1,
             };
-            // TODO: Scroll
+            self.adjscroll();
         }
     }
 
     fn goto_bottom(&mut self) {
         self.focus = Focus::OkButton;
-        // TODO: Scroll
+        self.adjscroll();
     }
 
     fn next_block(&mut self) {
@@ -273,7 +276,7 @@ impl<T> App<T> {
                 }
             }
         }
-        // TODO: Scroll
+        self.adjscroll();
     }
 
     fn prev_block(&mut self) {
@@ -306,7 +309,40 @@ impl<T> App<T> {
             }
             Focus::CancelButton => self.focus = Focus::OkButton,
         }
-        // TODO: Scroll
+        self.adjscroll();
+    }
+
+    fn adjscroll(&mut self) {
+        if let Some(screen_height) = self.screen_height {
+            match self.focus {
+                Focus::Item { index, .. } => {
+                    if index < self.scroll_offset {
+                        self.scroll_offset = index;
+                    } else {
+                        let mut depth = self.elements[self.scroll_offset..=index]
+                            .iter()
+                            .map(Element::height)
+                            .sum::<u16>();
+                        while depth > screen_height && self.scroll_offset < index {
+                            // Scroll down one full item
+                            depth -= self.elements[self.scroll_offset].height();
+                            self.scroll_offset += 1;
+                        }
+                    }
+                }
+                Focus::OkButton | Focus::CancelButton => {
+                    let mut depth = self.elements[self.scroll_offset..]
+                        .iter()
+                        .map(Element::height)
+                        .sum::<u16>();
+                    while depth > screen_height && self.scroll_offset < self.elements.len() - 1 {
+                        // Scroll down one full item
+                        depth -= self.elements[self.scroll_offset].height();
+                        self.scroll_offset += 1;
+                    }
+                }
+            }
+        }
     }
 
     fn activate(&mut self) {
@@ -425,7 +461,12 @@ impl<T> Widget for &mut App<T> {
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)]).areas(area);
         self.screen_height = Some(area.height);
         let max_scroll = wi.total_lines.saturating_sub(usize::from(area.height) - 1);
-        for (i, elem) in wi.elements.iter().enumerate().skip(self.scroll_offset) {
+        let mut scroll_position = 0;
+        for (i, elem) in wi.elements.iter().enumerate() {
+            if i < self.scroll_offset {
+                scroll_position += usize::from(elem.height());
+                continue;
+            }
             if area.is_empty() {
                 break;
             }
@@ -499,7 +540,7 @@ impl<T> Widget for &mut App<T> {
         if wi.total_lines > usize::from(area.height) {
             let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
                 .track_symbol(Some(ratatui::symbols::shade::MEDIUM));
-            let mut scroll_state = ScrollbarState::new(max_scroll).position(self.scroll_offset);
+            let mut scroll_state = ScrollbarState::new(max_scroll).position(scroll_position);
             scrollbar.render(scrollbar_area, buf, &mut scroll_state);
         }
     }
