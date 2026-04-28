@@ -10,6 +10,7 @@ use ratatui::{
     widgets::{Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Widget},
 };
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::rc::Rc;
 use std::time::Duration;
@@ -118,8 +119,8 @@ impl<T> App<T> {
                 KeyCode::Char('j') | KeyCode::Down => self.move_down(),
                 KeyCode::Char('k') | KeyCode::Up => self.move_up(),
                 KeyCode::Char('l') | KeyCode::Right => self.move_right(),
-                //TODO: KeyCode::Char('w') | KeyCode::PageUp => self.page_up(),
-                //TODO: KeyCode::Char('z') | KeyCode::PageDown => self.page_down(),
+                KeyCode::Char('w') | KeyCode::PageUp => self.page_up(),
+                KeyCode::Char('z') | KeyCode::PageDown => self.page_down(),
                 KeyCode::Char('g') | KeyCode::Home => self.goto_top(),
                 KeyCode::Char('G') | KeyCode::End => self.goto_bottom(),
                 KeyCode::Tab => self.next_block(),
@@ -216,15 +217,112 @@ impl<T> App<T> {
         }
     }
 
-    /*
     fn page_up(&mut self) {
-        todo!()
+        if !self.is_empty()
+            && let Some(screen_height) = self.screen_height
+            && let Some(ref wi) = self.wrap_cache
+        {
+            // Move focus to lowest focusable item above top of screen.  If
+            // there is no such item, the focus will be left where it is, but
+            // the scroll offset will be set to 0.
+            let mut focus_index = self.scroll_offset;
+            while focus_index > 0 {
+                focus_index -= 1;
+                if let Element::RadioOption { list, option, .. }
+                | Element::MultiOption { list, option, .. } = self.elements[focus_index]
+                {
+                    self.focus = Focus::Item {
+                        list,
+                        option,
+                        index: focus_index,
+                    };
+                    break;
+                }
+            }
+            // Scroll so that the new focus is at the bottom of the screen,
+            // possibly followed by a cut-off multiline item
+            self.scroll_offset = focus_index;
+            let mut accum = wi.elements[self.scroll_offset].height();
+            while self.scroll_offset > 0 {
+                self.scroll_offset -= 1;
+                let h = wi.elements[self.scroll_offset].height();
+                let acc2 = accum.saturating_add(h);
+                if acc2 <= screen_height {
+                    accum = acc2;
+                } else {
+                    break;
+                }
+            }
+        }
     }
 
     fn page_down(&mut self) {
-        todo!()
+        if !self.is_empty()
+            && let Some(screen_height) = self.screen_height
+            && let Some(ref wi) = self.wrap_cache
+        {
+            // Move focus to first focusable item below the screen, or to the
+            // item at the bottom of the screen if it's cut in two
+            let mut focus_index = self.scroll_offset;
+            let mut accum = 0u16;
+            let mut gotcha = false;
+            for elem in &wi.elements[self.scroll_offset..] {
+                focus_index += 1;
+                accum = accum.saturating_add(elem.height());
+                if accum > screen_height {
+                    match self.elements[focus_index] {
+                        Element::RadioOption { list, option, .. }
+                        | Element::MultiOption { list, option, .. } => {
+                            self.focus = Focus::Item {
+                                list,
+                                option,
+                                index: focus_index,
+                            };
+                            gotcha = true;
+                            break;
+                        }
+                        Element::Buttons => {
+                            self.focus = Focus::OkButton;
+                            gotcha = true;
+                            break;
+                        }
+                        _ => (),
+                    }
+                }
+            }
+            if !gotcha {
+                // There's nothing past the end of the screen, so just focus on
+                // the "OK" button
+                self.focus = Focus::OkButton;
+                return;
+            }
+            // Scroll so that the new focus is at the top of the screen, but
+            // not so much that there's space below the buttons
+            self.scroll_offset = focus_index;
+            let mut accum = 0u16;
+            for elem in &wi.elements[self.scroll_offset..] {
+                accum = accum.saturating_add(elem.height());
+                if accum >= screen_height {
+                    return;
+                }
+            }
+            while self.scroll_offset > 0 {
+                let h = wi.elements[self.scroll_offset - 1].height();
+                let acc2 = accum.saturating_add(h);
+                match acc2.cmp(&screen_height) {
+                    Ordering::Less => {
+                        accum = acc2;
+                        self.scroll_offset -= 1;
+                    }
+                    Ordering::Equal => {
+                        self.scroll_offset -= 1;
+                        break;
+                    }
+                    Ordering::Greater => break,
+                }
+            }
+        }
     }
-    */
 
     fn goto_top(&mut self) {
         if self.is_empty() {
