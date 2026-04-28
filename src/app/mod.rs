@@ -7,7 +7,7 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
     style::Style,
-    widgets::Widget,
+    widgets::{Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Widget},
 };
 use std::borrow::Cow;
 use std::collections::BTreeSet;
@@ -33,9 +33,10 @@ pub(crate) struct App<T> {
     quitting: bool,
     /// Did the user end the form by pressing "OK"?
     ok: bool,
-    wrap_cache: Option<WrapCache>,
+    wrap_cache: Option<Rc<WrapInfo>>,
     /// Number of elements of `elements` that are above the top of the screen
-    offset: usize,
+    scroll_offset: usize,
+    screen_height: Option<u16>,
 }
 
 impl<T> App<T> {
@@ -319,11 +320,11 @@ impl<T> App<T> {
         }
     }
 
-    fn get_wrapped_elements(&mut self, screen_width: u16) -> (u16, Rc<[Element]>) {
+    fn get_wrap_info(&mut self, screen_width: u16) -> Rc<WrapInfo> {
         if let Some(ref wc) = self.wrap_cache
             && wc.screen_width == screen_width
         {
-            (wc.option_highlight_width, Rc::clone(&wc.elements))
+            Rc::clone(wc)
         } else {
             let max_title_width = usize::from(screen_width.saturating_sub(1));
             let max_option_label_width = usize::from(screen_width.saturating_sub(
@@ -331,6 +332,7 @@ impl<T> App<T> {
             ));
             let mut option_highlight_width = 0;
             let mut elements = Vec::with_capacity(self.elements.len());
+            let mut total_lines = 0;
             for elem in &self.elements {
                 match elem {
                     Element::ListTitle(txt) => {
@@ -343,7 +345,8 @@ impl<T> App<T> {
                                 )
                             })
                             .map(Cow::into_owned)
-                            .collect();
+                            .collect::<Vec<_>>();
+                        total_lines += wrapped.len();
                         elements.push(Element::ListTitle(wrapped));
                     }
                     Element::RadioOption { list, option, text } => {
@@ -360,7 +363,8 @@ impl<T> App<T> {
                                 option_highlight_width = option_highlight_width.max(ln.width());
                             })
                             .map(Cow::into_owned)
-                            .collect();
+                            .collect::<Vec<_>>();
+                        total_lines += wrapped.len();
                         elements.push(Element::RadioOption {
                             list: *list,
                             option: *option,
@@ -381,38 +385,50 @@ impl<T> App<T> {
                                 option_highlight_width = option_highlight_width.max(ln.width());
                             })
                             .map(Cow::into_owned)
-                            .collect();
+                            .collect::<Vec<_>>();
+                        total_lines += wrapped.len();
                         elements.push(Element::MultiOption {
                             list: *list,
                             option: *option,
                             text: wrapped,
                         });
                     }
-                    Element::BlankLine => elements.push(Element::BlankLine),
-                    Element::Buttons => elements.push(Element::Buttons),
+                    Element::BlankLine => {
+                        total_lines += 1;
+                        elements.push(Element::BlankLine);
+                    }
+                    Element::Buttons => {
+                        total_lines += 1;
+                        elements.push(Element::Buttons);
+                    }
                 }
             }
-            let elements = Rc::<[Element]>::from(elements);
             let option_highlight_width = u16::try_from(option_highlight_width)
                 .unwrap_or(u16::MAX)
                 .saturating_add(4);
-            let r = (option_highlight_width, Rc::clone(&elements));
-            self.wrap_cache = Some(WrapCache {
+            let wi = Rc::new(WrapInfo {
                 screen_width,
                 option_highlight_width,
                 elements,
+                total_lines,
             });
-            r
+            self.wrap_cache = Some(Rc::clone(&wi));
+            wi
         }
     }
 }
 
 impl<T> Widget for &mut App<T> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let (option_highlight_width, elements) = self.get_wrapped_elements(area.width);
-        let [mut area, _scrollbar_area] =
+        let wi = self.get_wrap_info(area.width);
+        let [mut area, scrollbar_area] =
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)]).areas(area);
-        for (i, elem) in elements.iter().enumerate() {
+        self.screen_height = Some(area.height);
+        let max_scroll = wi.total_lines.saturating_sub(usize::from(area.height) - 1);
+        for (i, elem) in wi.elements.iter().enumerate().skip(self.scroll_offset) {
+            if area.is_empty() {
+                break;
+            }
             let [rows, a2] =
                 Layout::vertical([Constraint::Length(elem.height()), Constraint::Fill(1)])
                     .areas(area);
@@ -436,7 +452,7 @@ impl<T> Widget for &mut App<T> {
                     };
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
-                        Constraint::Length(option_highlight_width),
+                        Constraint::Length(wi.option_highlight_width),
                         Constraint::Fill(1),
                     ])
                     .areas(rows);
@@ -457,7 +473,7 @@ impl<T> Widget for &mut App<T> {
                     };
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
-                        Constraint::Length(option_highlight_width),
+                        Constraint::Length(wi.option_highlight_width),
                         Constraint::Fill(1),
                     ])
                     .areas(rows);
@@ -479,6 +495,12 @@ impl<T> Widget for &mut App<T> {
                     cancel_button.render(cancel_area, buf);
                 }
             }
+        }
+        if wi.total_lines > usize::from(area.height) {
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .track_symbol(Some(ratatui::symbols::shade::MEDIUM));
+            let mut scroll_state = ScrollbarState::new(max_scroll).position(self.scroll_offset);
+            scrollbar.render(scrollbar_area, buf, &mut scroll_state);
         }
     }
 }
@@ -555,7 +577,8 @@ impl<T> From<Form<T>> for App<T> {
             quitting: false,
             ok: false,
             wrap_cache: None,
-            offset: 0,
+            scroll_offset: 0,
+            screen_height: None,
         }
     }
 }
@@ -690,10 +713,11 @@ impl MultiData {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct WrapCache {
+struct WrapInfo {
     screen_width: u16,
     option_highlight_width: u16,
-    elements: Rc<[Element]>,
+    elements: Vec<Element>,
+    total_lines: usize,
 }
 
 fn split_lines(s: &str) -> Vec<String> {
