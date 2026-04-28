@@ -647,7 +647,9 @@ impl Element {
     fn height(&self) -> u16 {
         let len = match self {
             Element::ListTitle(txt) => txt.len(),
+            Element::RadioOption { text, .. } if text.is_empty() => 1,
             Element::RadioOption { text, .. } => text.len(),
+            Element::MultiOption { text, .. } if text.is_empty() => 1,
             Element::MultiOption { text, .. } => text.len(),
             Element::BlankLine => 1,
             Element::Buttons => 1,
