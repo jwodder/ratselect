@@ -34,6 +34,8 @@ pub(crate) struct App<T> {
     /// Did the user end the form by pressing "OK"?
     ok: bool,
     wrap_cache: Option<WrapCache>,
+    /// Number of elements of `elements` that are above the top of the screen
+    offset: usize,
 }
 
 impl<T> App<T> {
@@ -141,15 +143,24 @@ impl<T> App<T> {
         if let Focus::Item {
             mut list,
             mut option,
+            index,
         } = self.focus
         {
             option += 1;
             if option < self.lists[list].len() {
-                self.focus = Focus::Item { list, option };
+                self.focus = Focus::Item {
+                    list,
+                    option,
+                    index: index + 1,
+                };
             } else {
                 list += 1;
                 if list < self.lists.len() {
-                    self.focus = Focus::Item { list, option: 0 };
+                    self.focus = Focus::Item {
+                        list,
+                        option: 0,
+                        index: index + 3,
+                    };
                 } else {
                     self.focus = Focus::OkButton;
                 }
@@ -160,13 +171,22 @@ impl<T> App<T> {
 
     fn move_up(&mut self) {
         match self.focus {
-            Focus::Item { list, option } => {
+            Focus::Item {
+                list,
+                option,
+                index,
+            } => {
                 if let Some(option) = option.checked_sub(1) {
-                    self.focus = Focus::Item { list, option };
+                    self.focus = Focus::Item {
+                        list,
+                        option,
+                        index: index - 1,
+                    };
                 } else if let Some(list) = list.checked_sub(1) {
                     self.focus = Focus::Item {
                         list,
                         option: self.lists[list].len() - 1,
+                        index: index - 3,
                     };
                 }
                 // Else: We're at the top
@@ -176,6 +196,7 @@ impl<T> App<T> {
                     self.focus = Focus::Item {
                         list,
                         option: self.lists[list].len() - 1,
+                        index: self.elements.len() - 3,
                     };
                 }
                 // Else: content is empty; can't move up
@@ -204,7 +225,11 @@ impl<T> App<T> {
         if self.is_empty() {
             self.focus = Focus::OkButton;
         } else {
-            self.focus = Focus::Item { list: 0, option: 0 };
+            self.focus = Focus::Item {
+                list: 0,
+                option: 0,
+                index: 1,
+            };
             // TODO: Scroll
         }
     }
@@ -216,10 +241,20 @@ impl<T> App<T> {
 
     fn next_block(&mut self) {
         match self.focus {
-            Focus::Item { mut list, .. } => {
+            Focus::Item {
+                mut list,
+                option,
+                mut index,
+                ..
+            } => {
+                index += self.lists[list].len() - option + 2;
                 list += 1;
                 if list < self.lists.len() {
-                    self.focus = Focus::Item { list, option: 0 };
+                    self.focus = Focus::Item {
+                        list,
+                        option: 0,
+                        index,
+                    };
                 } else {
                     self.focus = Focus::OkButton;
                 }
@@ -229,7 +264,11 @@ impl<T> App<T> {
                 if self.is_empty() {
                     self.focus = Focus::OkButton;
                 } else {
-                    self.focus = Focus::Item { list: 0, option: 0 };
+                    self.focus = Focus::Item {
+                        list: 0,
+                        option: 0,
+                        index: 1,
+                    };
                 }
             }
         }
@@ -238,16 +277,28 @@ impl<T> App<T> {
 
     fn prev_block(&mut self) {
         match self.focus {
-            Focus::Item { list, .. } => {
+            Focus::Item {
+                list,
+                option,
+                index,
+            } => {
                 if let Some(list) = list.checked_sub(1) {
-                    self.focus = Focus::Item { list, option: 0 };
+                    self.focus = Focus::Item {
+                        list,
+                        option: 0,
+                        index: index - option - self.lists[list].len() - 2,
+                    };
                 } else {
                     self.focus = Focus::CancelButton;
                 }
             }
             Focus::OkButton => {
                 if let Some(list) = self.lists.len().checked_sub(1) {
-                    self.focus = Focus::Item { list, option: 0 };
+                    self.focus = Focus::Item {
+                        list,
+                        option: 0,
+                        index: self.elements.len() - self.lists[list].len() - 2,
+                    };
                 } else {
                     self.focus = Focus::CancelButton;
                 }
@@ -259,7 +310,7 @@ impl<T> App<T> {
 
     fn activate(&mut self) {
         match self.focus {
-            Focus::Item { list, option } => self.lists[list].activate_option(option),
+            Focus::Item { list, option, .. } => self.lists[list].activate_option(option),
             Focus::OkButton => {
                 self.ok = true;
                 self.quitting = true;
@@ -361,7 +412,7 @@ impl<T> Widget for &mut App<T> {
         let (option_highlight_width, elements) = self.get_wrapped_elements(area.width);
         let [mut area, _scrollbar_area] =
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)]).areas(area);
-        for elem in &*elements {
+        for (i, elem) in elements.iter().enumerate() {
             let [rows, a2] =
                 Layout::vertical([Constraint::Length(elem.height()), Constraint::Fill(1)])
                     .areas(area);
@@ -376,7 +427,12 @@ impl<T> Widget for &mut App<T> {
                     let wdgt = widgets::RadioOption {
                         label: text,
                         checked: self.lists[list].is_checked(option),
-                        focused: self.focus == (Focus::Item { list, option }),
+                        focused: self.focus
+                            == (Focus::Item {
+                                list,
+                                option,
+                                index: i,
+                            }),
                     };
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
@@ -392,7 +448,12 @@ impl<T> Widget for &mut App<T> {
                     let wdgt = widgets::MultiOption {
                         label: text,
                         checked: self.lists[list].is_checked(option),
-                        focused: self.focus == (Focus::Item { list, option }),
+                        focused: self.focus
+                            == (Focus::Item {
+                                list,
+                                option,
+                                index: i,
+                            }),
                     };
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
@@ -479,7 +540,11 @@ impl<T> From<Form<T>> for App<T> {
         let focus = if keys.is_empty() {
             Focus::OkButton
         } else {
-            Focus::Item { list: 0, option: 0 }
+            Focus::Item {
+                list: 0,
+                option: 0,
+                index: 1,
+            }
         };
         elements.push(Element::Buttons);
         App {
@@ -490,6 +555,7 @@ impl<T> From<Form<T>> for App<T> {
             quitting: false,
             ok: false,
             wrap_cache: None,
+            offset: 0,
         }
     }
 }
@@ -526,7 +592,19 @@ impl Element {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Focus {
-    Item { list: usize, option: usize },
+    Item {
+        /// Index within `App::lists` of the selection list within which the
+        /// focus is currently located
+        list: usize,
+
+        /// Index of the option of the focused selection list that has the
+        /// focus
+        option: usize,
+
+        /// Index within `App::elements` of the `RadioOption` or `MultiOption`
+        /// that has the focus
+        index: usize,
+    },
     OkButton,
     CancelButton,
 }
