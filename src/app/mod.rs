@@ -183,16 +183,18 @@ impl<T> App<T> {
                         option,
                         index: index - 1,
                     };
-                    self.adjscroll();
                 } else if let Some(list) = list.checked_sub(1) {
                     self.focus = Focus::Item {
                         list,
                         option: self.lists[list].len() - 1,
                         index: index - 3,
                     };
-                    self.adjscroll();
+                } else {
+                    // We're at the top option, but at least make sure the top
+                    // title is visible.
+                    self.scroll_offset = 0;
                 }
-                // Else: We're at the top
+                self.adjscroll();
             }
             Focus::OkButton | Focus::CancelButton => {
                 if let Some(list) = self.lists.len().checked_sub(1) {

@@ -499,6 +499,47 @@ fn scroll_down_one_line_then_back_up() {
     expected.set_style(Rect::new(0, 17, 79, 1), TITLE_STYLE); // "List B"
     expected.set_style(Rect::new(4, 0, 7, 1), HIGHLIGHT_STYLE); // "A0"
     pretty_assertions::assert_eq!(buffer, expected);
+
+    app.handle_event(Event::Key(KeyCode::Up.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "List A                                                                         ▲",
+        "    (X) A0                                                                     █",
+        "    ( ) A1                                                                     █",
+        "    ( ) A2                                                                     █",
+        "    ( ) A3                                                                     █",
+        "    ( ) A4                                                                     █",
+        "    ( ) A5                                                                     ▒",
+        "    ( ) A6                                                                     ▒",
+        "    ( ) A7                                                                     ▒",
+        "    ( ) A8                                                                     ▒",
+        "    ( ) A9                                                                     ▒",
+        "    ( ) A10                                                                    ▒",
+        "    ( ) A11                                                                    ▒",
+        "    ( ) A12                                                                    ▒",
+        "    ( ) A13                                                                    ▒",
+        "    ( ) A14                                                                    ▒",
+        "    ( ) A15                                                                    ▒",
+        "                                                                               ▒",
+        "List B                                                                         ▒",
+        "    (X) B0                                                                     ▒",
+        "    ( ) B1                                                                     ▒",
+        "    ( ) B2                                                                     ▒",
+        "    ( ) B3                                                                     ▒",
+        "    ( ) B4                                                                     ▼",
+    ]);
+    expected.set_style(Rect::new(0, 0, 79, 1), TITLE_STYLE); // "List A"
+    expected.set_style(Rect::new(0, 18, 79, 1), TITLE_STYLE); // "List B"
+    expected.set_style(Rect::new(4, 1, 7, 1), HIGHLIGHT_STYLE); // "A0"
+    pretty_assertions::assert_eq!(buffer, expected);
+
+    app.handle_event(Event::Key(KeyCode::Up.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+    pretty_assertions::assert_eq!(buffer, expected);
 }
 
 #[test]
