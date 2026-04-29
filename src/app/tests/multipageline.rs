@@ -259,3 +259,45 @@ fn lorem_down_to_split_bottom() {
     expected.set_style(Rect::new(4, 22, 75, 2), HIGHLIGHT_STYLE); // "processus dynamicus ..."
     pretty_assertions::assert_eq!(buffer, expected);
 }
+
+#[test]
+fn lorem_goto_bottom() {
+    let mut app = App::from(mklorem());
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+
+    app.handle_event(Event::Key(KeyCode::End.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "    ( ) molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero▲",
+        "        eros et accumsan                                                       ▒",
+        "    ( ) et iusto odio dignissim qui blandit praesent luptatum zzril delenit    ▒",
+        "        augue duis dolore                                                      ▒",
+        "    ( ) te feugait nulla facilisi.  Nam liber tempor cum soluta nobis eleifend ▒",
+        "        option congue                                                          ▒",
+        "                                                                               ▒",
+        "Ipsum                                                                          █",
+        "    [ ] nihil imperdiet doming id quod mazim placerat facer possim assum.  Typi█",
+        "        non habent                                                             █",
+        "    [ ] claritatem insitam; est usus legentis in iis qui facit eorum           █",
+        "        claritatem.  Investigationes                                           █",
+        "    [ ] demonstraverunt lectores legere me lius quod ii legunt saepius.        █",
+        "        Claritas est etiam                                                     █",
+        "    [ ] processus dynamicus, qui sequitur mutationem consuetudium lectorum.    █",
+        "        Mirum est notare                                                       █",
+        "    [ ] quam littera gothica, quam nunc putamus parum claram, anteposuerit     █",
+        "        litterarum formas                                                      █",
+        "    [ ] humanitatis per seacula quarta decima et quinta decima.  Eodem modo    █",
+        "        typi, qui nunc                                                         █",
+        "    [ ] nobis videntur parum clari, fiant sollemnes in futurum.                █",
+        "                                                                               █",
+        "                           <OK>               <Cancel>                         █",
+        "                                                                               ▼",
+    ]);
+    expected.set_style(Rect::new(0, 7, 79, 1), TITLE_STYLE); // "Ipsum"
+    expected.set_style(Rect::new(27, 22, 4, 1), HIGHLIGHT_STYLE); // "<OK>"
+    pretty_assertions::assert_eq!(buffer, expected);
+}
