@@ -223,9 +223,9 @@ impl<T> App<T> {
             && let Some(ref wi) = self.wrap_cache
         {
             // Move focus to lowest focusable item above top of screen.  If
-            // there is no such item, the focus will be left where it is, but
-            // the scroll offset will be set to 0.
+            // there is no such item, scroll to top.
             let mut focus_index = self.scroll_offset;
+            let mut gotcha = false;
             while focus_index > 0 {
                 focus_index -= 1;
                 if let Element::RadioOption { list, option, .. }
@@ -236,22 +236,27 @@ impl<T> App<T> {
                         option,
                         index: focus_index,
                     };
+                    gotcha = true;
                     break;
                 }
             }
-            // Scroll so that the new focus is at the bottom of the screen,
-            // possibly followed by a cut-off multiline item
-            self.scroll_offset = focus_index;
-            let mut accum = wi.elements[self.scroll_offset].height();
-            while self.scroll_offset > 0 {
-                self.scroll_offset -= 1;
-                let h = wi.elements[self.scroll_offset].height();
-                let acc2 = accum.saturating_add(h);
-                if acc2 <= screen_height {
-                    accum = acc2;
-                } else {
-                    break;
+            if gotcha {
+                // Scroll so that the new focus is at the bottom of the screen,
+                // possibly followed by a cut-off multiline item
+                self.scroll_offset = focus_index;
+                let mut accum = wi.elements[self.scroll_offset].height();
+                while self.scroll_offset > 0 {
+                    self.scroll_offset -= 1;
+                    let h = wi.elements[self.scroll_offset].height();
+                    let acc2 = accum.saturating_add(h);
+                    if acc2 <= screen_height {
+                        accum = acc2;
+                    } else {
+                        break;
+                    }
                 }
+            } else {
+                self.goto_top();
             }
         }
     }
