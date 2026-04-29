@@ -315,7 +315,9 @@ impl<T> App<T> {
     }
 
     fn adjscroll(&mut self) {
-        if let Some(screen_height) = self.screen_height {
+        if let Some(screen_height) = self.screen_height
+            && let Some(ref wi) = self.wrap_cache
+        {
             match self.focus {
                 Focus::Item { index, .. } => {
                     if index < self.scroll_offset {
@@ -327,7 +329,7 @@ impl<T> App<T> {
                             .sum::<u16>();
                         while depth > screen_height && self.scroll_offset < index {
                             // Scroll down one full item
-                            depth -= self.elements[self.scroll_offset].height();
+                            depth -= wi.elements[self.scroll_offset].height();
                             self.scroll_offset += 1;
                         }
                     }
@@ -339,7 +341,7 @@ impl<T> App<T> {
                         .sum::<u16>();
                     while depth > screen_height && self.scroll_offset < self.elements.len() - 1 {
                         // Scroll down one full item
-                        depth -= self.elements[self.scroll_offset].height();
+                        depth -= wi.elements[self.scroll_offset].height();
                         self.scroll_offset += 1;
                     }
                 }
