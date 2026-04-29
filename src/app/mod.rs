@@ -272,7 +272,6 @@ impl<T> App<T> {
             let mut accum = 0u16;
             let mut gotcha = false;
             for elem in &wi.elements[self.scroll_offset..] {
-                focus_index += 1;
                 accum = accum.saturating_add(elem.height());
                 if accum > screen_height {
                     match self.elements[focus_index] {
@@ -294,6 +293,7 @@ impl<T> App<T> {
                         _ => (),
                     }
                 }
+                focus_index += 1;
             }
             if !gotcha {
                 // There's nothing past the end of the screen, so just focus on
