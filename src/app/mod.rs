@@ -323,7 +323,7 @@ impl<T> App<T> {
                     if index < self.scroll_offset {
                         self.scroll_offset = index;
                     } else {
-                        let mut depth = self.elements[self.scroll_offset..=index]
+                        let mut depth = wi.elements[self.scroll_offset..=index]
                             .iter()
                             .map(Element::height)
                             .sum::<u16>();

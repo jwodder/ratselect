@@ -4,6 +4,26 @@
 use crate::app::*;
 use ratatui::{buffer::Buffer, layout::Rect};
 
+const LOREM: [&str; 7] = [
+    "Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod",
+    "tincidunt ut laoreet dolore magna aliquam erat volutpat.  Ut wisi enim ad minim veniam,",
+    "quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut aliquip ex ea commodo",
+    "consequat.  Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse",
+    "molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan",
+    "et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore",
+    "te feugait nulla facilisi.  Nam liber tempor cum soluta nobis eleifend option congue",
+];
+
+const IPSUM: [&str; 7] = [
+    "nihil imperdiet doming id quod mazim placerat facer possim assum.  Typi non habent",
+    "claritatem insitam; est usus legentis in iis qui facit eorum claritatem.  Investigationes",
+    "demonstraverunt lectores legere me lius quod ii legunt saepius.  Claritas est etiam",
+    "processus dynamicus, qui sequitur mutationem consuetudium lectorum.  Mirum est notare",
+    "quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas",
+    "humanitatis per seacula quarta decima et quinta decima.  Eodem modo typi, qui nunc",
+    "nobis videntur parum clari, fiant sollemnes in futurum.",
+];
+
 mod areas {
     use super::*;
 
@@ -66,6 +86,13 @@ fn mkform() -> Form<&'static str> {
             ],
         ),
     );
+    form
+}
+
+fn mklorem() -> Form<&'static str> {
+    let mut form = Form::new();
+    form.add("lorem", RadioSelector::new("Lorem", LOREM));
+    form.add("ipsum", MultiSelector::new("Ipsum", IPSUM));
     form
 }
 
@@ -148,5 +175,87 @@ fn down_to_split_bottom() {
     ]);
     expected.set_style(Rect::new(0, 9, 79, 1), TITLE_STYLE); // "Bar"
     expected.set_style(Rect::new(4, 18, 15, 4), HIGHLIGHT_STYLE); // "Bar Quux" x 4
+    pretty_assertions::assert_eq!(buffer, expected);
+}
+
+#[test]
+fn draw_lorem() {
+    let mut app = App::from(mklorem());
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "Lorem                                                                          ▲",
+        "    (X) Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam     █",
+        "        nonummy nibh euismod                                                   █",
+        "    ( ) tincidunt ut laoreet dolore magna aliquam erat volutpat.  Ut wisi enim █",
+        "        ad minim veniam,                                                       █",
+        "    ( ) quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut       █",
+        "        aliquip ex ea commodo                                                  █",
+        "    ( ) consequat.  Duis autem vel eum iriure dolor in hendrerit in vulputate  █",
+        "        velit esse                                                             █",
+        "    ( ) molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero█",
+        "        eros et accumsan                                                       █",
+        "    ( ) et iusto odio dignissim qui blandit praesent luptatum zzril delenit    █",
+        "        augue duis dolore                                                      █",
+        "    ( ) te feugait nulla facilisi.  Nam liber tempor cum soluta nobis eleifend █",
+        "        option congue                                                          █",
+        "                                                                               █",
+        "Ipsum                                                                          █",
+        "    [ ] nihil imperdiet doming id quod mazim placerat facer possim assum.  Typi█",
+        "        non habent                                                             ▒",
+        "    [ ] claritatem insitam; est usus legentis in iis qui facit eorum           ▒",
+        "        claritatem.  Investigationes                                           ▒",
+        "    [ ] demonstraverunt lectores legere me lius quod ii legunt saepius.        ▒",
+        "        Claritas est etiam                                                     ▒",
+        "    [ ] processus dynamicus, qui sequitur mutationem consuetudium lectorum.    ▼",
+    ]);
+    expected.set_style(Rect::new(0, 0, 79, 1), TITLE_STYLE); // "Lorem"
+    expected.set_style(Rect::new(0, 16, 79, 1), TITLE_STYLE); // "Ipsum"
+    expected.set_style(Rect::new(4, 1, 75, 2), HIGHLIGHT_STYLE); // "Lorem ipsum ..."
+    pretty_assertions::assert_eq!(buffer, expected);
+}
+
+#[test]
+fn lorem_down_to_split_bottom() {
+    let mut app = App::from(mklorem());
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+
+    for _ in 0..10 {
+        app.handle_event(Event::Key(KeyCode::Down.into()));
+        assert!(app.get_output().is_none());
+    }
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "    (X) Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam     ▲",
+        "        nonummy nibh euismod                                                   ▒",
+        "    ( ) tincidunt ut laoreet dolore magna aliquam erat volutpat.  Ut wisi enim █",
+        "        ad minim veniam,                                                       █",
+        "    ( ) quis nostrud exerci tation ullamcorper suscipit lobortis nisl ut       █",
+        "        aliquip ex ea commodo                                                  █",
+        "    ( ) consequat.  Duis autem vel eum iriure dolor in hendrerit in vulputate  █",
+        "        velit esse                                                             █",
+        "    ( ) molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero█",
+        "        eros et accumsan                                                       █",
+        "    ( ) et iusto odio dignissim qui blandit praesent luptatum zzril delenit    █",
+        "        augue duis dolore                                                      █",
+        "    ( ) te feugait nulla facilisi.  Nam liber tempor cum soluta nobis eleifend █",
+        "        option congue                                                          █",
+        "                                                                               █",
+        "Ipsum                                                                          █",
+        "    [ ] nihil imperdiet doming id quod mazim placerat facer possim assum.  Typi█",
+        "        non habent                                                             █",
+        "    [ ] claritatem insitam; est usus legentis in iis qui facit eorum           ▒",
+        "        claritatem.  Investigationes                                           ▒",
+        "    [ ] demonstraverunt lectores legere me lius quod ii legunt saepius.        ▒",
+        "        Claritas est etiam                                                     ▒",
+        "    [ ] processus dynamicus, qui sequitur mutationem consuetudium lectorum.    ▒",
+        "        Mirum est notare                                                       ▼",
+    ]);
+    expected.set_style(Rect::new(0, 15, 79, 1), TITLE_STYLE); // "Ipsum"
+    expected.set_style(Rect::new(4, 22, 75, 2), HIGHLIGHT_STYLE); // "processus dynamicus ..."
     pretty_assertions::assert_eq!(buffer, expected);
 }
