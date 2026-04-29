@@ -335,7 +335,7 @@ impl<T> App<T> {
                     }
                 }
                 Focus::OkButton | Focus::CancelButton => {
-                    let mut depth = self.elements[self.scroll_offset..]
+                    let mut depth = wi.elements[self.scroll_offset..]
                         .iter()
                         .map(Element::height)
                         .sum::<u16>();
