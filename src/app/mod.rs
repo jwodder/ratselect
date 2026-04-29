@@ -246,11 +246,11 @@ impl<T> App<T> {
                 self.scroll_offset = focus_index;
                 let mut accum = wi.elements[self.scroll_offset].height();
                 while self.scroll_offset > 0 {
-                    self.scroll_offset -= 1;
-                    let h = wi.elements[self.scroll_offset].height();
+                    let h = wi.elements[self.scroll_offset - 1].height();
                     let acc2 = accum.saturating_add(h);
                     if acc2 <= screen_height {
                         accum = acc2;
+                        self.scroll_offset -= 1;
                     } else {
                         break;
                     }

@@ -697,3 +697,81 @@ fn page_down() {
     expected.set_style(Rect::new(4, 0, 7, 1), HIGHLIGHT_STYLE); // "B5"
     pretty_assertions::assert_eq!(buffer, expected);
 }
+
+#[test]
+fn page_down_twice_then_page_up() {
+    let mut app = App::from(mkform());
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+
+    app.handle_event(Event::Key(KeyCode::PageDown.into()));
+    assert!(app.get_output().is_none());
+    app.handle_event(Event::Key(KeyCode::PageDown.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "    ( ) C10                                                                    ▲",
+        "    ( ) C11                                                                    ▒",
+        "    ( ) C12                                                                    ▒",
+        "    ( ) C13                                                                    ▒",
+        "    ( ) C14                                                                    ▒",
+        "    ( ) C15                                                                    ▒",
+        "    ( ) C16                                                                    ▒",
+        "    ( ) C17                                                                    ▒",
+        "                                                                               ▒",
+        "List D                                                                         ▒",
+        "    (X) D0                                                                     ▒",
+        "    ( ) D1                                                                     █",
+        "    ( ) D2                                                                     █",
+        "    ( ) D3                                                                     █",
+        "    ( ) D4                                                                     █",
+        "    ( ) D5                                                                     █",
+        "    ( ) D6                                                                     █",
+        "    ( ) D7                                                                     ▒",
+        "    ( ) D8                                                                     ▒",
+        "    ( ) D9                                                                     ▒",
+        "    ( ) D10                                                                    ▒",
+        "    ( ) D11                                                                    ▒",
+        "    ( ) D12                                                                    ▒",
+        "    ( ) D13                                                                    ▼",
+    ]);
+    expected.set_style(Rect::new(0, 9, 79, 1), TITLE_STYLE); // "List D"
+    expected.set_style(Rect::new(4, 0, 7, 1), HIGHLIGHT_STYLE); // "C10"
+    pretty_assertions::assert_eq!(buffer, expected);
+
+    app.handle_event(Event::Key(KeyCode::PageUp.into()));
+    assert!(app.get_output().is_none());
+    let mut buffer = Buffer::empty(areas::SCREEN);
+    app.render(areas::SCREEN, &mut buffer);
+    let mut expected = Buffer::with_lines([
+        "    ( ) B5                                                                     ▲",
+        "    ( ) B6                                                                     ▒",
+        "    ( ) B7                                                                     ▒",
+        "    ( ) B8                                                                     ▒",
+        "    ( ) B9                                                                     ▒",
+        "    ( ) B10                                                                    ▒",
+        "    ( ) B11                                                                    █",
+        "    ( ) B12                                                                    █",
+        "    ( ) B13                                                                    █",
+        "    ( ) B14                                                                    █",
+        "    ( ) B15                                                                    █",
+        "    ( ) B16                                                                    ▒",
+        "                                                                               ▒",
+        "List C                                                                         ▒",
+        "    (X) C0                                                                     ▒",
+        "    ( ) C1                                                                     ▒",
+        "    ( ) C2                                                                     ▒",
+        "    ( ) C3                                                                     ▒",
+        "    ( ) C4                                                                     ▒",
+        "    ( ) C5                                                                     ▒",
+        "    ( ) C6                                                                     ▒",
+        "    ( ) C7                                                                     ▒",
+        "    ( ) C8                                                                     ▒",
+        "    ( ) C9                                                                     ▼",
+    ]);
+    expected.set_style(Rect::new(0, 13, 79, 1), TITLE_STYLE); // "List C"
+    expected.set_style(Rect::new(4, 23, 7, 1), HIGHLIGHT_STYLE); // "C9"
+    pretty_assertions::assert_eq!(buffer, expected);
+}
