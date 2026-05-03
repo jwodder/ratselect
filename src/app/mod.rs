@@ -7,9 +7,10 @@ use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
     style::Style,
-    widgets::Widget,
+    widgets::{Scrollbar, ScrollbarOrientation, ScrollbarState, StatefulWidget, Widget},
 };
 use std::borrow::Cow;
+use std::cmp::Ordering;
 use std::collections::BTreeSet;
 use std::rc::Rc;
 use std::time::Duration;
@@ -33,7 +34,10 @@ pub(crate) struct App<T> {
     quitting: bool,
     /// Did the user end the form by pressing "OK"?
     ok: bool,
-    wrap_cache: Option<WrapCache>,
+    wrap_cache: Option<Rc<WrapInfo>>,
+    /// Number of elements of `elements` that are above the top of the screen
+    scroll_offset: usize,
+    screen_height: Option<u16>,
 }
 
 impl<T> App<T> {
@@ -115,8 +119,8 @@ impl<T> App<T> {
                 KeyCode::Char('j') | KeyCode::Down => self.move_down(),
                 KeyCode::Char('k') | KeyCode::Up => self.move_up(),
                 KeyCode::Char('l') | KeyCode::Right => self.move_right(),
-                //TODO: KeyCode::Char('w') | KeyCode::PageUp => self.page_up(),
-                //TODO: KeyCode::Char('z') | KeyCode::PageDown => self.page_down(),
+                KeyCode::Char('w') | KeyCode::PageUp => self.page_up(),
+                KeyCode::Char('z') | KeyCode::PageDown => self.page_down(),
                 KeyCode::Char('g') | KeyCode::Home => self.goto_top(),
                 KeyCode::Char('G') | KeyCode::End => self.goto_bottom(),
                 KeyCode::Tab => self.next_block(),
@@ -141,47 +145,70 @@ impl<T> App<T> {
         if let Focus::Item {
             mut list,
             mut option,
+            index,
         } = self.focus
         {
             option += 1;
             if option < self.lists[list].len() {
-                self.focus = Focus::Item { list, option };
+                self.focus = Focus::Item {
+                    list,
+                    option,
+                    index: index + 1,
+                };
             } else {
                 list += 1;
                 if list < self.lists.len() {
-                    self.focus = Focus::Item { list, option: 0 };
+                    self.focus = Focus::Item {
+                        list,
+                        option: 0,
+                        index: index + 3,
+                    };
                 } else {
                     self.focus = Focus::OkButton;
                 }
             }
+            self.adjscroll();
         }
-        // TODO: Scroll
     }
 
     fn move_up(&mut self) {
         match self.focus {
-            Focus::Item { list, option } => {
+            Focus::Item {
+                list,
+                option,
+                index,
+            } => {
                 if let Some(option) = option.checked_sub(1) {
-                    self.focus = Focus::Item { list, option };
+                    self.focus = Focus::Item {
+                        list,
+                        option,
+                        index: index - 1,
+                    };
                 } else if let Some(list) = list.checked_sub(1) {
                     self.focus = Focus::Item {
                         list,
                         option: self.lists[list].len() - 1,
+                        index: index - 3,
                     };
+                } else {
+                    // We're at the top option, but at least make sure the top
+                    // title is visible.
+                    self.scroll_offset = 0;
                 }
-                // Else: We're at the top
+                self.adjscroll();
             }
             Focus::OkButton | Focus::CancelButton => {
                 if let Some(list) = self.lists.len().checked_sub(1) {
                     self.focus = Focus::Item {
                         list,
                         option: self.lists[list].len() - 1,
+                        index: self.elements.len() - 3,
                     };
+                    self.adjscroll();
                 }
                 // Else: content is empty; can't move up
             }
         }
-        // TODO: Scroll
     }
 
     fn move_right(&mut self) {
@@ -190,36 +217,153 @@ impl<T> App<T> {
         }
     }
 
-    /*
     fn page_up(&mut self) {
-        todo!()
+        if !self.is_empty()
+            && let Some(screen_height) = self.screen_height
+            && let Some(ref wi) = self.wrap_cache
+        {
+            // Move focus to lowest focusable item above top of screen.  If
+            // there is no such item, scroll to top.
+            let mut focus_index = self.scroll_offset;
+            let mut gotcha = false;
+            while focus_index > 0 {
+                focus_index -= 1;
+                if let Element::RadioOption { list, option, .. }
+                | Element::MultiOption { list, option, .. } = self.elements[focus_index]
+                {
+                    self.focus = Focus::Item {
+                        list,
+                        option,
+                        index: focus_index,
+                    };
+                    gotcha = true;
+                    break;
+                }
+            }
+            if gotcha {
+                // Scroll so that the new focus is at the bottom of the screen,
+                // possibly followed by a cut-off multiline item
+                self.scroll_offset = focus_index;
+                let mut accum = wi.elements[self.scroll_offset].height();
+                while self.scroll_offset > 0 {
+                    let h = wi.elements[self.scroll_offset - 1].height();
+                    let acc2 = accum.saturating_add(h);
+                    if acc2 <= screen_height {
+                        accum = acc2;
+                        self.scroll_offset -= 1;
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                self.goto_top();
+            }
+        }
     }
 
     fn page_down(&mut self) {
-        todo!()
+        if !self.is_empty()
+            && let Some(screen_height) = self.screen_height
+            && let Some(ref wi) = self.wrap_cache
+        {
+            // Move focus to first focusable item below the screen, or to the
+            // item at the bottom of the screen if it's cut in two
+            let mut focus_index = self.scroll_offset;
+            let mut accum = 0u16;
+            let mut gotcha = false;
+            for elem in &wi.elements[self.scroll_offset..] {
+                accum = accum.saturating_add(elem.height());
+                if accum > screen_height {
+                    match self.elements[focus_index] {
+                        Element::RadioOption { list, option, .. }
+                        | Element::MultiOption { list, option, .. } => {
+                            self.focus = Focus::Item {
+                                list,
+                                option,
+                                index: focus_index,
+                            };
+                            gotcha = true;
+                            break;
+                        }
+                        Element::Buttons => {
+                            self.focus = Focus::OkButton;
+                            gotcha = true;
+                            break;
+                        }
+                        _ => (),
+                    }
+                }
+                focus_index += 1;
+            }
+            if !gotcha {
+                // There's nothing past the end of the screen, so just focus on
+                // the "OK" button
+                self.focus = Focus::OkButton;
+                return;
+            }
+            // Scroll so that the new focus is at the top of the screen, but
+            // not so much that there's space below the buttons
+            self.scroll_offset = focus_index;
+            let mut accum = 0u16;
+            for elem in &wi.elements[self.scroll_offset..] {
+                accum = accum.saturating_add(elem.height());
+                if accum >= screen_height {
+                    return;
+                }
+            }
+            while self.scroll_offset > 0 {
+                let h = wi.elements[self.scroll_offset - 1].height();
+                let acc2 = accum.saturating_add(h);
+                match acc2.cmp(&screen_height) {
+                    Ordering::Less => {
+                        accum = acc2;
+                        self.scroll_offset -= 1;
+                    }
+                    Ordering::Equal => {
+                        self.scroll_offset -= 1;
+                        break;
+                    }
+                    Ordering::Greater => break,
+                }
+            }
+        }
     }
-    */
 
     fn goto_top(&mut self) {
         if self.is_empty() {
             self.focus = Focus::OkButton;
         } else {
-            self.focus = Focus::Item { list: 0, option: 0 };
-            // TODO: Scroll
+            self.scroll_offset = 0;
+            self.focus = Focus::Item {
+                list: 0,
+                option: 0,
+                index: 1,
+            };
+            self.adjscroll();
         }
     }
 
     fn goto_bottom(&mut self) {
         self.focus = Focus::OkButton;
-        // TODO: Scroll
+        self.adjscroll();
     }
 
     fn next_block(&mut self) {
         match self.focus {
-            Focus::Item { mut list, .. } => {
+            Focus::Item {
+                mut list,
+                option,
+                mut index,
+                ..
+            } => {
+                index += self.lists[list].len() - option + 2;
                 list += 1;
                 if list < self.lists.len() {
-                    self.focus = Focus::Item { list, option: 0 };
+                    self.focus = Focus::Item {
+                        list,
+                        option: 0,
+                        index,
+                    };
                 } else {
                     self.focus = Focus::OkButton;
                 }
@@ -229,37 +373,86 @@ impl<T> App<T> {
                 if self.is_empty() {
                     self.focus = Focus::OkButton;
                 } else {
-                    self.focus = Focus::Item { list: 0, option: 0 };
+                    self.focus = Focus::Item {
+                        list: 0,
+                        option: 0,
+                        index: 1,
+                    };
                 }
             }
         }
-        // TODO: Scroll
+        self.adjscroll();
     }
 
     fn prev_block(&mut self) {
         match self.focus {
-            Focus::Item { list, .. } => {
+            Focus::Item {
+                list,
+                option,
+                index,
+            } => {
                 if let Some(list) = list.checked_sub(1) {
-                    self.focus = Focus::Item { list, option: 0 };
+                    self.focus = Focus::Item {
+                        list,
+                        option: 0,
+                        index: index - option - self.lists[list].len() - 2,
+                    };
                 } else {
                     self.focus = Focus::CancelButton;
                 }
             }
             Focus::OkButton => {
                 if let Some(list) = self.lists.len().checked_sub(1) {
-                    self.focus = Focus::Item { list, option: 0 };
+                    self.focus = Focus::Item {
+                        list,
+                        option: 0,
+                        index: self.elements.len() - self.lists[list].len() - 2,
+                    };
                 } else {
                     self.focus = Focus::CancelButton;
                 }
             }
             Focus::CancelButton => self.focus = Focus::OkButton,
         }
-        // TODO: Scroll
+        self.adjscroll();
+    }
+
+    fn adjscroll(&mut self) {
+        if let Some(screen_height) = self.screen_height {
+            match self.focus {
+                Focus::Item { index, .. } => {
+                    if index < self.scroll_offset {
+                        self.scroll_offset = index;
+                    } else {
+                        let mut depth = self.elements[self.scroll_offset..=index]
+                            .iter()
+                            .map(Element::height)
+                            .sum::<u16>();
+                        while depth > screen_height && self.scroll_offset < index {
+                            // Scroll down one full item
+                            depth -= self.elements[self.scroll_offset].height();
+                            self.scroll_offset += 1;
+                        }
+                    }
+                }
+                Focus::OkButton | Focus::CancelButton => {
+                    let mut depth = self.elements[self.scroll_offset..]
+                        .iter()
+                        .map(Element::height)
+                        .sum::<u16>();
+                    while depth > screen_height && self.scroll_offset < self.elements.len() - 1 {
+                        // Scroll down one full item
+                        depth -= self.elements[self.scroll_offset].height();
+                        self.scroll_offset += 1;
+                    }
+                }
+            }
+        }
     }
 
     fn activate(&mut self) {
         match self.focus {
-            Focus::Item { list, option } => self.lists[list].activate_option(option),
+            Focus::Item { list, option, .. } => self.lists[list].activate_option(option),
             Focus::OkButton => {
                 self.ok = true;
                 self.quitting = true;
@@ -268,11 +461,11 @@ impl<T> App<T> {
         }
     }
 
-    fn get_wrapped_elements(&mut self, screen_width: u16) -> (u16, Rc<[Element]>) {
+    fn get_wrap_info(&mut self, screen_width: u16) -> Rc<WrapInfo> {
         if let Some(ref wc) = self.wrap_cache
             && wc.screen_width == screen_width
         {
-            (wc.option_highlight_width, Rc::clone(&wc.elements))
+            Rc::clone(wc)
         } else {
             let max_title_width = usize::from(screen_width.saturating_sub(1));
             let max_option_label_width = usize::from(screen_width.saturating_sub(
@@ -280,6 +473,7 @@ impl<T> App<T> {
             ));
             let mut option_highlight_width = 0;
             let mut elements = Vec::with_capacity(self.elements.len());
+            let mut total_lines = 0;
             for elem in &self.elements {
                 match elem {
                     Element::ListTitle(txt) => {
@@ -292,7 +486,8 @@ impl<T> App<T> {
                                 )
                             })
                             .map(Cow::into_owned)
-                            .collect();
+                            .collect::<Vec<_>>();
+                        total_lines += wrapped.len();
                         elements.push(Element::ListTitle(wrapped));
                     }
                     Element::RadioOption { list, option, text } => {
@@ -309,7 +504,8 @@ impl<T> App<T> {
                                 option_highlight_width = option_highlight_width.max(ln.width());
                             })
                             .map(Cow::into_owned)
-                            .collect();
+                            .collect::<Vec<_>>();
+                        total_lines += wrapped.len();
                         elements.push(Element::RadioOption {
                             list: *list,
                             option: *option,
@@ -330,38 +526,55 @@ impl<T> App<T> {
                                 option_highlight_width = option_highlight_width.max(ln.width());
                             })
                             .map(Cow::into_owned)
-                            .collect();
+                            .collect::<Vec<_>>();
+                        total_lines += wrapped.len();
                         elements.push(Element::MultiOption {
                             list: *list,
                             option: *option,
                             text: wrapped,
                         });
                     }
-                    Element::BlankLine => elements.push(Element::BlankLine),
-                    Element::Buttons => elements.push(Element::Buttons),
+                    Element::BlankLine => {
+                        total_lines += 1;
+                        elements.push(Element::BlankLine);
+                    }
+                    Element::Buttons => {
+                        total_lines += 1;
+                        elements.push(Element::Buttons);
+                    }
                 }
             }
-            let elements = Rc::<[Element]>::from(elements);
             let option_highlight_width = u16::try_from(option_highlight_width)
                 .unwrap_or(u16::MAX)
                 .saturating_add(4);
-            let r = (option_highlight_width, Rc::clone(&elements));
-            self.wrap_cache = Some(WrapCache {
+            let wi = Rc::new(WrapInfo {
                 screen_width,
                 option_highlight_width,
                 elements,
+                total_lines,
             });
-            r
+            self.wrap_cache = Some(Rc::clone(&wi));
+            wi
         }
     }
 }
 
 impl<T> Widget for &mut App<T> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let (option_highlight_width, elements) = self.get_wrapped_elements(area.width);
-        let [mut area, _scrollbar_area] =
+        let wi = self.get_wrap_info(area.width);
+        let [mut area, scrollbar_area] =
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)]).areas(area);
-        for elem in &*elements {
+        self.screen_height = Some(area.height);
+        let max_scroll = wi.total_lines.saturating_sub(usize::from(area.height) - 1);
+        let mut scroll_position = 0;
+        for (i, elem) in wi.elements.iter().enumerate() {
+            if i < self.scroll_offset {
+                scroll_position += usize::from(elem.height());
+                continue;
+            }
+            if area.is_empty() {
+                break;
+            }
             let [rows, a2] =
                 Layout::vertical([Constraint::Length(elem.height()), Constraint::Fill(1)])
                     .areas(area);
@@ -376,11 +589,16 @@ impl<T> Widget for &mut App<T> {
                     let wdgt = widgets::RadioOption {
                         label: text,
                         checked: self.lists[list].is_checked(option),
-                        focused: self.focus == (Focus::Item { list, option }),
+                        focused: self.focus
+                            == (Focus::Item {
+                                list,
+                                option,
+                                index: i,
+                            }),
                     };
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
-                        Constraint::Length(option_highlight_width),
+                        Constraint::Length(wi.option_highlight_width),
                         Constraint::Fill(1),
                     ])
                     .areas(rows);
@@ -392,11 +610,16 @@ impl<T> Widget for &mut App<T> {
                     let wdgt = widgets::MultiOption {
                         label: text,
                         checked: self.lists[list].is_checked(option),
-                        focused: self.focus == (Focus::Item { list, option }),
+                        focused: self.focus
+                            == (Focus::Item {
+                                list,
+                                option,
+                                index: i,
+                            }),
                     };
                     let [_, line_area, _] = Layout::horizontal([
                         Constraint::Length(OPTION_INDENT),
-                        Constraint::Length(option_highlight_width),
+                        Constraint::Length(wi.option_highlight_width),
                         Constraint::Fill(1),
                     ])
                     .areas(rows);
@@ -418,6 +641,12 @@ impl<T> Widget for &mut App<T> {
                     cancel_button.render(cancel_area, buf);
                 }
             }
+        }
+        if wi.total_lines > usize::from(area.height) {
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .track_symbol(Some(ratatui::symbols::shade::MEDIUM));
+            let mut scroll_state = ScrollbarState::new(max_scroll).position(scroll_position);
+            scrollbar.render(scrollbar_area, buf, &mut scroll_state);
         }
     }
 }
@@ -479,7 +708,11 @@ impl<T> From<Form<T>> for App<T> {
         let focus = if keys.is_empty() {
             Focus::OkButton
         } else {
-            Focus::Item { list: 0, option: 0 }
+            Focus::Item {
+                list: 0,
+                option: 0,
+                index: 1,
+            }
         };
         elements.push(Element::Buttons);
         App {
@@ -490,6 +723,8 @@ impl<T> From<Form<T>> for App<T> {
             quitting: false,
             ok: false,
             wrap_cache: None,
+            scroll_offset: 0,
+            screen_height: None,
         }
     }
 }
@@ -515,7 +750,9 @@ impl Element {
     fn height(&self) -> u16 {
         let len = match self {
             Element::ListTitle(txt) => txt.len(),
+            Element::RadioOption { text, .. } if text.is_empty() => 1,
             Element::RadioOption { text, .. } => text.len(),
+            Element::MultiOption { text, .. } if text.is_empty() => 1,
             Element::MultiOption { text, .. } => text.len(),
             Element::BlankLine => 1,
             Element::Buttons => 1,
@@ -526,7 +763,19 @@ impl Element {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Focus {
-    Item { list: usize, option: usize },
+    Item {
+        /// Index within `App::lists` of the selection list within which the
+        /// focus is currently located
+        list: usize,
+
+        /// Index of the option of the focused selection list that has the
+        /// focus
+        option: usize,
+
+        /// Index within `App::elements` of the `RadioOption` or `MultiOption`
+        /// that has the focus
+        index: usize,
+    },
     OkButton,
     CancelButton,
 }
@@ -612,10 +861,11 @@ impl MultiData {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct WrapCache {
+struct WrapInfo {
     screen_width: u16,
     option_highlight_width: u16,
-    elements: Rc<[Element]>,
+    elements: Vec<Element>,
+    total_lines: usize,
 }
 
 fn split_lines(s: &str) -> Vec<String> {
