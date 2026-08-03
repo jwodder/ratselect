@@ -1318,6 +1318,14 @@ fn shift_tab_around() {
 
     app.handle_event(Event::Key(KeyCode::BackTab.into()));
     assert!(app.get_output().is_none());
+    assert_eq!(
+        app.focus,
+        Focus::Item {
+            list: 0,
+            option: 0,
+            index: 1
+        }
+    );
     let mut buffer = Buffer::empty(areas::SCREEN);
     app.render(areas::SCREEN, &mut buffer);
     let mut expected = Buffer::with_lines([
